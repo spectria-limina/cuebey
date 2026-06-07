@@ -547,9 +547,9 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
 
       {/* Row operations — footer */}
       <div className="re-ops">
-        <button className="ghost" onClick={() => onAddCue?.(i, false)}>+ ↑</button>
+        <button className="ghost" onClick={() => onAddCue?.(i, false)}>⊕ Above</button>
         <button className="ghost re-del" onClick={() => onDeleteCue?.(i)}>✕ Delete</button>
-        <button className="ghost" onClick={() => onAddCue?.(i, true)}>+ ↓</button>
+        <button className="ghost" onClick={() => onAddCue?.(i, true)}>⊕ Below</button>
       </div>
     </div>
   );
