@@ -192,17 +192,6 @@ export default function App() {
     if (!wasActive) kick();
   }
 
-  function startAt(t: number): void {
-    const e = eng.current;
-    const wasActive = e.started;
-    e.started = true; e.paused = false; e.phaseHold = false;
-    t = Math.max(0, t);
-    e.syncTime = t; e.syncPerf = performance.now(); e.frozenClock = t; e.prevClock = t;
-    lastTopActiveRef.current = -1;
-    syncEngState();
-    if (!wasActive) kick();
-  }
-
   function togglePause(): void {
     const e = eng.current;
     const v = videoRef.current;

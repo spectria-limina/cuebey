@@ -190,20 +190,20 @@ main.solo .resize-handle-left { display: none; }
 }
 .rrow:hover { background: #191c24; }
 
-/* State-based left border on rrow-wrap — highest specificity wins in cascade order */
-.rrow-wrap.rrow-cur { border-left-color: var(--green); background: rgba(51,178,119,.04); }
-.rrow-wrap.rrow-selected { border-left-color: var(--blue); background: rgba(86,168,232,.04); }
-.rrow-wrap.rrow-hovered { background: #0d1e2d; }
-/* When both cur and selected, selected (blue) wins visually; a small NOW label appears via JS */
-.rrow-wrap.rrow-selected .rt { color: var(--blue); }
-.rrow-wrap.rrow-cur:not(.rrow-selected) .rt { color: var(--green); }
-
-/* Type-specific rrow styles */
+/* Type-specific rrow styles — come first so state rules below can override them */
 .rrow-wrap.t-call { border-left-color: rgba(51,178,119,0.2); }
 .rrow-wrap.t-note { border-left-color: rgba(155,140,255,0.4); }
 .rrow-wrap.t-phase { border-left-color: var(--blue); background: rgba(86,168,232,.03); }
 .rrow-wrap.t-event { border-left-color: rgba(86,90,110,0.3); }
 .rrow-wrap.t-cast { border-left-color: rgba(120,100,40,0.3); }
+
+/* State-based left border on rrow-wrap — must come after type rules to win cascade */
+.rrow-wrap.rrow-cur { border-left-color: #2b9c68; background: rgba(51,178,119,.04); }
+.rrow-wrap.rrow-selected { border-left-color: var(--blue); background: rgba(86,168,232,.04); }
+.rrow-wrap.rrow-hovered { background: #0d1e2d; }
+/* When both cur and selected, selected (blue) wins visually; a small NOW label appears via JS */
+.rrow-wrap.rrow-selected .rt { color: var(--blue); }
+.rrow-wrap.rrow-cur:not(.rrow-selected) .rt { color: #2b9c68; }
 
 /* Dragging / disabled */
 .rrow.dragging { opacity: 0.35; }
