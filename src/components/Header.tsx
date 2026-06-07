@@ -38,6 +38,7 @@ interface HeaderProps {
   onUnloadVideo: () => void;
   onSpeedChange: (rate: number) => void;
   onClockSeek: (t: number) => void;
+  onClockBlur: () => void;
 }
 
 export default function Header({
@@ -46,7 +47,7 @@ export default function Header({
   hideDone, onToggleHideDone,
   locked, onToggleLock,
   showHelp, onToggleHelp,
-  onLoadVideo, onUnloadVideo, onSpeedChange, onClockSeek,
+  onLoadVideo, onUnloadVideo, onSpeedChange, onClockSeek, onClockBlur,
 }: HeaderProps) {
   const { started, paused, phaseHold } = engState;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,10 +74,8 @@ export default function Header({
     }
   }
 
-  function handleClockBlur(e: React.FocusEvent<HTMLInputElement>) {
-    // Let paintFrame restore the value on next animation tick
-    // by just clearing — paintFrame will re-fill on next call
-    e.currentTarget.value = e.currentTarget.value; // no-op, paintFrame handles it
+  function handleClockBlur() {
+    onClockBlur();
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {

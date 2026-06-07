@@ -52,7 +52,7 @@ interface TimelineProps {
   focusRowRef: React.RefObject<((i: number) => void) | null>;
   locked: boolean;
   editorClockDisplayRef: React.RefObject<HTMLDivElement | null>;
-  onEditorWheelNudge: (delta: number) => void;
+  onEditorWheelNudge: (delta: number) => boolean;
 }
 
 export default function Timeline({
@@ -87,11 +87,12 @@ export default function Timeline({
     const el = rlistRef.current;
     if (!el) return;
     const handler = (e: WheelEvent) => {
-      e.preventDefault();
       if (e.shiftKey) {
+        e.preventDefault();
         onNudgeRef.current?.(e.deltaY / 100);
       } else {
-        onEditorWheelNudgeRef.current?.(e.deltaY / 100 * WHEEL_SEC_PER_STROKE);
+        const consumed = onEditorWheelNudgeRef.current?.(e.deltaY / 100 * WHEEL_SEC_PER_STROKE);
+        if (consumed) e.preventDefault();
       }
     };
     el.addEventListener('wheel', handler, { passive: false });

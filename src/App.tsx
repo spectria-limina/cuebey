@@ -132,7 +132,7 @@ export default function App() {
 
     lastRenderCur.current = -2;
     lastTopActiveRef.current = -1;
-    paintFrame(eng.current.started ? currentClock() : 0);
+    paintFrame(currentClock());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [csvText, offsetText]);
 
@@ -164,7 +164,7 @@ export default function App() {
     const e = eng.current;
     if (e.paused || e.phaseHold) return e.frozenClock;
     if (e.videoSynced && videoRef.current) return getTimelineFromVideo(videoRef.current.currentTime);
-    if (!e.started) return 0;
+    if (!e.started) return editorClockRef.current;
     return e.syncTime + (performance.now() - e.syncPerf) / 1000;
   }
 
@@ -381,6 +381,7 @@ export default function App() {
     if (editorClockDisplayRef.current) {
       editorClockDisplayRef.current.textContent = fmtClock(editorClockRef.current);
     }
+    paintFrame(editorClockRef.current);
   }
 
   function handleDoubleClick(i: number): void {
@@ -397,10 +398,11 @@ export default function App() {
     }
   }
 
-  function handleEditorWheelNudge(delta: number): void {
+  function handleEditorWheelNudge(delta: number): boolean {
     const e = eng.current;
-    if (e.started && !e.paused && !e.phaseHold) return; // running — ignore
+    if (e.started && !e.paused && !e.phaseHold) return false; // live — don't consume
     setEditorClock(editorClockRef.current + delta);
+    return true;
   }
 
   function editCue(i: number, changes: CueChanges): void {
@@ -1172,6 +1174,7 @@ export default function App() {
         onUnloadVideo={unloadVideo}
         onSpeedChange={setVideoRate}
         onClockSeek={seekToTime}
+        onClockBlur={() => paintFrame(currentClock())}
       />
       <main
         className={showTimeline ? '' : 'solo'}
