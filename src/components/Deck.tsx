@@ -1,12 +1,31 @@
 import { useRef, useEffect } from 'react';
-import { renderText } from '../parser.js';
+import { renderText } from '../parser.ts';
+import type { Cue, VarsRecord, EngStateSnapshot, CardDomRefs } from '../types.ts';
+
+interface DeckProps {
+  cues: Cue[];
+  vars: VarsRecord;
+  engState: EngStateSnapshot;
+  doneDisabled: boolean;
+  onDone: (i: number) => void;
+  onSetVar: (name: string, val: string) => void;
+  onSyncEntry: (i: number) => void;
+  onPhaseBtn: () => void;
+  onCardFocus: (i: number) => void;
+  onHover: (i: number) => void;
+  onUnhover: (i: number) => void;
+  onToggleDisabled: (i: number) => void;
+  registerCard: (i: number, refs: CardDomRefs) => void;
+  unregisterCard: (i: number) => void;
+  locked: boolean;
+}
 
 export default function Deck({
   cues, vars, engState, doneDisabled,
   onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus,
   onHover, onUnhover, onToggleDisabled,
-  registerCard, unregisterCard, locked,
-}) {
+  registerCard, unregisterCard,
+}: DeckProps) {
   return (
     <section className="deck" id="deck">
       {cues.map((cue, i) => (
@@ -33,20 +52,38 @@ export default function Deck({
   );
 }
 
+interface DeckCardProps {
+  i: number;
+  cue: Cue;
+  vars: VarsRecord;
+  engState: EngStateSnapshot;
+  doneDisabled: boolean;
+  onDone: (i: number) => void;
+  onSetVar: (name: string, val: string) => void;
+  onSyncEntry: (i: number) => void;
+  onPhaseBtn: () => void;
+  onCardFocus: (i: number) => void;
+  onHover: (i: number) => void;
+  onUnhover: (i: number) => void;
+  onToggleDisabled: (i: number) => void;
+  registerCard: (i: number, refs: CardDomRefs) => void;
+  unregisterCard: (i: number) => void;
+}
+
 function DeckCard({
   i, cue, vars, engState, doneDisabled,
   onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus,
   onHover, onUnhover, onToggleDisabled,
   registerCard, unregisterCard,
-}) {
-  const slotRef   = useRef(null);
-  const cardRef   = useRef(null);
-  const cdRef     = useRef(null);
-  const barRef    = useRef(null);
-  const barwrapRef= useRef(null);
-  const stateElRef= useRef(null);
-  const gbRef     = useRef(null);
-  const doneBtnRef= useRef(null);
+}: DeckCardProps) {
+  const slotRef    = useRef<HTMLDivElement>(null);
+  const cardRef    = useRef<HTMLDivElement>(null);
+  const cdRef      = useRef<HTMLDivElement>(null);
+  const barRef     = useRef<HTMLDivElement>(null);
+  const barwrapRef = useRef<HTMLDivElement>(null);
+  const stateElRef = useRef<HTMLDivElement>(null);
+  const gbRef      = useRef<HTMLButtonElement>(null);
+  const doneBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     registerCard(i, {

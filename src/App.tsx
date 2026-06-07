@@ -1,40 +1,46 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { parseTime, fmtClock, fmtClean, cdHTML } from './format.js';
-import { buildCues, serializeCSV, renderText, SEED_CSV, WARN_DEFAULT } from './parser.js';
-import Header from './components/Header.jsx';
-import Timeline from './components/Timeline.jsx';
-import Deck from './components/Deck.jsx';
-import Variables from './components/Variables.jsx';
-import VideoPanel from './components/VideoPanel.jsx';
+import { parseTime, fmtClock, fmtClean, cdHTML } from './format.ts';
+import { buildCues, serializeCSV, SEED_CSV, WARN_DEFAULT } from './parser.ts';
+import Header from './components/Header.tsx';
+import Timeline from './components/Timeline.tsx';
+import Deck from './components/Deck.tsx';
+import Variables from './components/Variables.tsx';
+import VideoPanel from './components/VideoPanel.tsx';
+import type {
+  Cue, VarsRecord, EngineRef, EngStateSnapshot, ParseStatus,
+  CardRef, CardDomRefs, VarCardRef, VarCardDomRefs, RenderRowRef,
+  CueState, CueChanges,
+} from './types.ts';
 
 const REMAIN_DEFAULT = 0.5;
-// Seconds after last variable use retires before a note card enters retired state
+// Seconds after last variable use retires before a note card enters pending/retired state
 const VAR_LINGER = 5;
 
 export default function App() {
-  const [csvText, setCsvText] = useState(() => localStorage.getItem('cuebey-csv') || SEED_CSV);
-  const [offsetText, setOffsetText] = useState('0:00:00');
-  const [activeTab, setActiveTab] = useState('source');
-  const [showTimeline, setShowTimeline] = useState(true);
-  const [locked, setLocked] = useState(false);
+  const [csvText, setCsvText] = useState<string>(() => localStorage.getItem('cuebey-csv') || SEED_CSV);
+  const [offsetText, setOffsetText] = useState<string>('0:00:00');
+  const [activeTab, setActiveTab] = useState<string>('source');
+  const [showTimeline, setShowTimeline] = useState<boolean>(true);
+  const [locked, setLocked] = useState<boolean>(false);
 
-  const [cues, setCues] = useState([]);
-  const [vars, setVars] = useState({});
-  const [parseStatus, setParseStatus] = useState({ ok: true, msg: 'Ready.' });
-  const [metaText, setMetaText] = useState('—');
+  const [cues, setCues] = useState<Cue[]>([]);
+  const [vars, setVars] = useState<VarsRecord>({});
+  const [varConflicts, setVarConflicts] = useState<string[]>([]);
+  const [parseStatus, setParseStatus] = useState<ParseStatus>({ ok: true, msg: 'Ready.' });
+  const [metaText, setMetaText] = useState<string>('—');
 
-  const [engState, setEngState] = useState({ started: false, paused: false, phaseHold: false });
-  const [hideDone, setHideDone] = useState(true);
-  const [showHelp, setShowHelp] = useState(false);
+  const [engState, setEngState] = useState<EngStateSnapshot>({ started: false, paused: false, phaseHold: false });
+  const [hideDone, setHideDone] = useState<boolean>(true);
+  const [showHelp, setShowHelp] = useState<boolean>(false);
 
   // Video
-  const videoRef = useRef(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-  const [videoSynced, setVideoSynced] = useState(false);
-  const [fps, setFps] = useState(30);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState<boolean>(false);
+  const [videoSynced, setVideoSynced] = useState<boolean>(false);
+  const [fps, setFps] = useState<number>(30);
 
   // Engine timing — mutable refs, never triggers React re-renders
-  const eng = useRef({
+  const eng = useRef<EngineRef>({
     started: false, paused: false, phaseHold: false, phaseHoldIdx: -1,
     syncTime: 0, syncPerf: 0, frozenClock: 0, prevClock: -1e9,
     raf: 0, running: false,
@@ -63,21 +69,21 @@ export default function App() {
   }, [hideDone]);
 
   // Animated DOM refs
-  const clockDisplayRef = useRef(null);
-  const cardRefs = useRef([]);
-  const varRefs = useRef([]);
-  const renderRowRefs = useRef([]);
-  const lastRenderCur = useRef(-2);
-  const focusRowRef = useRef(null);
-  const selectedIdxRef = useRef(-1);
-  const hoveredIdxRef = useRef(-1);
-  const hideDoneRef = useRef(true);
+  const clockDisplayRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(CardRef | null)[]>([]);
+  const varRefs = useRef<(VarCardRef | null)[]>([]);
+  const renderRowRefs = useRef<(RenderRowRef | null)[]>([]);
+  const lastRenderCur = useRef<number>(-2);
+  const focusRowRef = useRef<((i: number) => void) | null>(null);
+  const selectedIdxRef = useRef<number>(-1);
+  const hoveredIdxRef = useRef<number>(-1);
+  const hideDoneRef = useRef<boolean>(true);
   hideDoneRef.current = hideDone;
-  const lastTopActiveRef = useRef(-1);
+  const lastTopActiveRef = useRef<number>(-1);
 
   // Live cues/vars for the animation loop
-  const cuesRef = useRef([]);
-  const varsRef = useRef({});
+  const cuesRef = useRef<Cue[]>([]);
+  const varsRef = useRef<VarsRecord>({});
 
   // ── Parse & rebuild ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -91,9 +97,8 @@ export default function App() {
     });
 
     // Warn about variables with conflicting definitions (multiple sets with different options)
-    const conflicts = [];
+    const conflicts: string[] = [];
     Object.values(newVars).forEach(v => {
-      // Check all cues' sets for this variable — if options ever differ from v.options, it's a conflict
       for (const c of newCues) {
         for (const s of c.sets) {
           if (s.name === v.name && s.options.length && s.options.join('|') !== v.options.join('|')) {
@@ -102,14 +107,14 @@ export default function App() {
         }
       }
     });
-    newVars._conflicts = conflicts;
 
     cuesRef.current = newCues;
     varsRef.current = newVars;
     setCues(newCues);
     setVars({ ...newVars });
+    setVarConflicts(conflicts);
 
-    const last = newCues.reduce((m, c) => (!m || c.effTime > m.effTime) ? c : m, null);
+    const last = newCues.reduce<Cue | null>((m, c) => (!m || c.effTime > m.effTime) ? c : m, null);
     setMetaText(
       newCues.length + ' cue' + (newCues.length !== 1 ? 's' : '') +
       (last ? ' · ends ' + fmtClean(last.effTime) : '') +
@@ -128,7 +133,7 @@ export default function App() {
   }, [csvText, offsetText]);
 
   // ── Video helpers ─────────────────────────────────────────────────────────
-  function getTimelineFromVideo(vt) {
+  function getTimelineFromVideo(vt: number): number {
     const pts = eng.current.syncPoints;
     if (!pts.length) return 0;
     let best = pts[0];
@@ -139,7 +144,7 @@ export default function App() {
     return best.timelineTime + (vt - best.videoTime);
   }
 
-  function getVideoFromTimeline(tl) {
+  function getVideoFromTimeline(tl: number): number | null {
     const pts = eng.current.syncPoints;
     if (!pts.length) return null;
     let best = pts[0];
@@ -151,7 +156,7 @@ export default function App() {
   }
 
   // ── Engine helpers ────────────────────────────────────────────────────────
-  function currentClock() {
+  function currentClock(): number {
     const e = eng.current;
     if (e.paused || e.phaseHold) return e.frozenClock;
     if (e.videoSynced && videoRef.current) return getTimelineFromVideo(videoRef.current.currentTime);
@@ -159,31 +164,31 @@ export default function App() {
     return e.syncTime + (performance.now() - e.syncPerf) / 1000;
   }
 
-  function syncEngState() {
+  function syncEngState(): void {
     const e = eng.current;
     setEngState({ started: e.started, paused: e.paused, phaseHold: e.phaseHold });
   }
 
-  function firstIdx() {
+  function firstIdx(): number {
     const c = cuesRef.current;
     for (let i = 0; i < c.length; i++) if (!c[i].skipped) return i;
     return -1;
   }
 
-  function start() {
+  function start(): void {
     const e = eng.current;
     const wasActive = e.started;
     e.started = true; e.paused = false; e.phaseHold = false;
     e.syncTime = 0; e.syncPerf = performance.now(); e.frozenClock = 0;
     lastTopActiveRef.current = -1;
     const c = cuesRef.current;
-    const firstPhase = c.reduce((m, x) => x.type === 'phase' && (m === null || x.effTime < m.effTime) ? x : m, null);
+    const firstPhase = c.reduce<Cue | null>((m, x) => x.type === 'phase' && (m === null || x.effTime < m.effTime) ? x : m, null);
     e.prevClock = (firstPhase && firstPhase.effTime <= 0) ? firstPhase.effTime : -1e9;
     syncEngState();
     if (!wasActive) kick();
   }
 
-  function startAt(t) {
+  function startAt(t: number): void {
     const e = eng.current;
     const wasActive = e.started;
     e.started = true; e.paused = false; e.phaseHold = false;
@@ -194,7 +199,7 @@ export default function App() {
     if (!wasActive) kick();
   }
 
-  function togglePause() {
+  function togglePause(): void {
     const e = eng.current;
     const v = videoRef.current;
 
@@ -222,7 +227,7 @@ export default function App() {
     syncEngState();
   }
 
-  function goRelease() {
+  function goRelease(): void {
     const e = eng.current;
     if (e.phaseHold) {
       const phaseTime = e.frozenClock;
@@ -240,7 +245,7 @@ export default function App() {
     }
   }
 
-  function nudge(d) {
+  function nudge(d: number): void {
     const e = eng.current;
     const v = videoRef.current;
     if (e.videoSynced && v) {
@@ -253,7 +258,7 @@ export default function App() {
     e.prevClock = currentClock();
   }
 
-  function markDone(i) {
+  function markDone(i: number): void {
     const c = cuesRef.current[i];
     if (!c) return;
     const slot = cardRefs.current[i]?.slot;
@@ -268,7 +273,7 @@ export default function App() {
     paintFrame(currentClock());
   }
 
-  function toggleDone(i) {
+  function toggleDone(i: number): void {
     const c = cuesRef.current[i];
     if (!c) return;
     if (c.skipped) {
@@ -284,14 +289,14 @@ export default function App() {
     paintFrame(currentClock());
   }
 
-  function toggleDisabled(i) {
+  function toggleDisabled(i: number): void {
     const c = cuesRef.current[i];
     if (!c) return;
     c.disabled = !c.disabled;
     setCsvText(serializeCSV(cuesRef.current));
   }
 
-  function onSyncEntry(i) {
+  function onSyncEntry(i: number): void {
     const c = cuesRef.current[i];
     if (!c) return;
     const e = eng.current;
@@ -315,7 +320,7 @@ export default function App() {
     paintFrame(currentClock());
   }
 
-  function refreshCardClass(d) {
+  function refreshCardClass(d: CardRef): void {
     if (!d?.card) return;
     const c = cuesRef.current[d.i];
     if (!c) return;
@@ -329,19 +334,19 @@ export default function App() {
       (d._hov ? ' ui-hovered' : '');
   }
 
-  function applyHoveredClass(i, add) {
+  function applyHoveredClass(i: number, add: boolean): void {
     renderRowRefs.current[i]?.row?.classList.toggle('rrow-hovered', add);
     const d = cardRefs.current[i];
     if (d) { d._hov = add; refreshCardClass(d); }
   }
 
-  function applySelectedClass(i, add) {
+  function applySelectedClass(i: number, add: boolean): void {
     renderRowRefs.current[i]?.row?.classList.toggle('rrow-selected', add);
     const d = cardRefs.current[i];
     if (d) { d._sel = add; refreshCardClass(d); }
   }
 
-  function handleSelect(i) {
+  function handleSelect(i: number): void {
     const prev = selectedIdxRef.current;
     if (prev >= 0) applySelectedClass(prev, false);
     selectedIdxRef.current = i;
@@ -349,14 +354,14 @@ export default function App() {
     // Does NOT seek the clock; double-click calls handleSeek for that
   }
 
-  function handleSeek(i) {
+  function handleSeek(i: number): void {
     // Seek the clock to ~5s before the selected cue (double-click action)
     const e = eng.current;
     if (e.started && !e.paused && !e.phaseHold) return;
     maybeSeek(i);
   }
 
-  function handleHover(i) {
+  function handleHover(i: number): void {
     const prev = hoveredIdxRef.current;
     if (prev === i) return;
     if (prev >= 0) applyHoveredClass(prev, false);
@@ -364,30 +369,30 @@ export default function App() {
     if (i >= 0) applyHoveredClass(i, true);
   }
 
-  function handleUnhover(i) {
+  function handleUnhover(i: number): void {
     if (hoveredIdxRef.current !== i) return;
     hoveredIdxRef.current = -1;
     applyHoveredClass(i, false);
   }
 
-  function editCue(i, changes) {
+  function editCue(i: number, changes: CueChanges): void {
     const c = cuesRef.current[i];
     if (!c) return;
     const offsetSec = parseTime(offsetText) || 0;
-    if ('type' in changes) c.type = changes.type;
-    if ('text' in changes) { c.text = changes.text; c._tok = /{[a-zA-Z0-9_|]/.test(changes.text); }
+    if ('type' in changes) c.type = changes.type!;
+    if ('text' in changes) { c.text = changes.text!; c._tok = /{[a-zA-Z0-9_|]/.test(changes.text!); }
     if ('rawTime' in changes) {
-      const t = parseTime(changes.rawTime);
+      const t = parseTime(changes.rawTime!);
       if (t !== null) { c.raw = t; c.effTime = t - offsetSec; }
     }
-    if ('standby' in changes) c.standby = changes.standby;
-    if ('warn' in changes) c.warn = changes.warn;
-    if ('remain' in changes) c.remain = changes.remain;
-    if ('sets' in changes) c.sets = changes.sets;
+    if ('standby' in changes) c.standby = changes.standby ?? null;
+    if ('warn' in changes) c.warn = changes.warn ?? null;
+    if ('remain' in changes) c.remain = changes.remain ?? null;
+    if ('sets' in changes) c.sets = changes.sets!;
     setCsvText(serializeCSV(cuesRef.current));
   }
 
-  function reorderCues(fromIdx, toIdx) {
+  function reorderCues(fromIdx: number, toIdx: number): void {
     if (fromIdx === toIdx) return;
     const c = [...cuesRef.current];
     const [moved] = c.splice(fromIdx, 1);
@@ -396,12 +401,12 @@ export default function App() {
     setCsvText(serializeCSV(c));
   }
 
-  function deleteCue(i) {
+  function deleteCue(i: number): void {
     cuesRef.current.splice(i, 1);
     setCsvText(serializeCSV(cuesRef.current));
   }
 
-  function addCue(i, after) {
+  function addCue(i: number, after: boolean): void {
     const c = cuesRef.current;
     const ref = c[i];
     const offsetSec = parseTime(offsetText) || 0;
@@ -412,12 +417,12 @@ export default function App() {
       type: 'call', text: '',
       standby: null, warn: null, remain: null,
       sets: [], skipped: false, disabled: false,
-      syncPoint: false, castbarDuration: null, _tok: false,
+      syncPoint: false, castbarDuration: null, _tok: false, varRefs: [],
     });
     setCsvText(serializeCSV(c));
   }
 
-  function reset() {
+  function reset(): void {
     const e = eng.current;
     const wasVideoSynced = e.videoSynced;
     const savedPoints = [...e.syncPoints];
@@ -427,7 +432,7 @@ export default function App() {
     lastTopActiveRef.current = -1;
     cancelAnimationFrame(e.raf);
     cuesRef.current.forEach(c => (c.skipped = false));
-    Object.values(varsRef.current).forEach(v => { if (typeof v === 'object' && v.value !== undefined) v.value = null; });
+    Object.values(varsRef.current).forEach(v => { v.value = null; });
 
     if (wasVideoSynced && videoRef.current && savedPoints.length) {
       const v = videoRef.current;
@@ -444,7 +449,7 @@ export default function App() {
     syncEngState();
     setVars(prev => {
       const next = { ...prev };
-      Object.values(next).forEach(vv => { if (typeof vv === 'object' && vv.value !== undefined) vv.value = null; });
+      Object.values(next).forEach(vv => { vv.value = null; });
       return next;
     });
 
@@ -453,20 +458,20 @@ export default function App() {
       const deckEl = document.getElementById('deck');
       if (deckEl) deckEl.scrollTop = 0;
       const rlistEl = document.querySelector('.rlist');
-      if (rlistEl) rlistEl.scrollTop = 0;
+      if (rlistEl) (rlistEl as HTMLElement).scrollTop = 0;
     });
 
     paintFrame(0);
   }
 
-  function setVar(name, val) {
+  function setVar(name: string, val: string): void {
     const v = varsRef.current[name];
     if (!v) return;
     v.value = v.value === val ? null : val;
     setVars(prev => ({ ...prev, [name]: { ...prev[name], value: v.value } }));
   }
 
-  function maybeSeek(i) {
+  function maybeSeek(i: number): void {
     const e = eng.current;
     const v = videoRef.current;
     if (e.started && !e.paused && !e.phaseHold) return;
@@ -482,12 +487,12 @@ export default function App() {
   }
 
   // ── Deck auto-scroll ─────────────────────────────────────────────────────
-  function smoothScrollDeck(deckEl, targetScrollTop, duration = 800) {
+  function smoothScrollDeck(deckEl: HTMLElement, targetScrollTop: number, duration = 800): void {
     const start = deckEl.scrollTop;
     const delta = targetScrollTop - start;
     if (Math.abs(delta) < 2) return;
     const t0 = performance.now();
-    const step = (now) => {
+    const step = (now: number) => {
       const p = Math.min((now - t0) / duration, 1);
       const ease = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
       deckEl.scrollTop = start + delta * ease;
@@ -496,7 +501,7 @@ export default function App() {
     requestAnimationFrame(step);
   }
 
-  function scrollDeckToCard(i, delay = 0) {
+  function scrollDeckToCard(i: number, delay = 0): void {
     const doScroll = () => {
       const d = cardRefs.current[i];
       const deckEl = document.getElementById('deck');
@@ -512,7 +517,7 @@ export default function App() {
   }
 
   // ── Video sync controls ───────────────────────────────────────────────────
-  function setVideoSync() {
+  function setVideoSync(): void {
     const e = eng.current;
     const v = videoRef.current;
     if (!v) return;
@@ -528,21 +533,21 @@ export default function App() {
     e.prevClock = -1e9;
 
     cuesRef.current.forEach(c => (c.skipped = false));
-    Object.values(varsRef.current).forEach(vv => { if (typeof vv === 'object' && vv.value !== undefined) vv.value = null; });
+    Object.values(varsRef.current).forEach(vv => { vv.value = null; });
     lastRenderCur.current = -2;
 
     syncEngState();
     setVideoSynced(true);
     setVars(prev => {
       const next = { ...prev };
-      Object.values(next).forEach(vv => { if (typeof vv === 'object' && vv.value !== undefined) vv.value = null; });
+      Object.values(next).forEach(vv => { vv.value = null; });
       return next;
     });
     if (!e.paused && !e.running) kick();
     else paintFrame(0);
   }
 
-  function clearVideoSync() {
+  function clearVideoSync(): void {
     const e = eng.current;
     e.videoSynced = false;
     e.syncPoints = [];
@@ -556,7 +561,7 @@ export default function App() {
     paintFrame(0);
   }
 
-  function loadVideo(file) {
+  function loadVideo(file: File): void {
     const v = videoRef.current;
     if (!v) return;
     if (v.src && v.src.startsWith('blob:')) URL.revokeObjectURL(v.src);
@@ -565,7 +570,7 @@ export default function App() {
     setVideoLoaded(true);
   }
 
-  function unloadVideo() {
+  function unloadVideo(): void {
     const v = videoRef.current;
     if (!v) return;
     clearVideoSync();
@@ -575,7 +580,7 @@ export default function App() {
     setVideoLoaded(false);
   }
 
-  function setVideoRate(rate) {
+  function setVideoRate(rate: number): void {
     if (videoRef.current) videoRef.current.playbackRate = rate;
   }
 
@@ -626,7 +631,7 @@ export default function App() {
   }, []);
 
   // ── Animation loop ────────────────────────────────────────────────────────
-  function advance() {
+  function advance(): void {
     const e = eng.current;
     if (!e.started) return;
     if (!e.paused && !e.phaseHold) {
@@ -654,14 +659,14 @@ export default function App() {
     paintFrame(currentClock());
   }
 
-  function kick() {
+  function kick(): void {
     const e = eng.current;
     if (e.running) return;
     e.running = true;
     loop();
   }
 
-  function loop() {
+  function loop(): void {
     const e = eng.current;
     if (!e.started) { e.running = false; return; }
     advance();
@@ -685,8 +690,8 @@ export default function App() {
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
-    const handler = e => {
-      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'INPUT') return;
       if (e.code === 'Space') { e.preventDefault(); togglePause(); }
       else if (e.key === 'Enter') { e.preventDefault(); goRelease(); }
       else if (e.key === 'ArrowLeft') nudge(-0.5);
@@ -712,7 +717,7 @@ export default function App() {
 
   // ── State computation ─────────────────────────────────────────────────────
 
-  function stateOf(i, clock) {
+  function stateOf(i: number, clock: number): CueState {
     const e = eng.current;
     const c = cuesRef.current[i];
     if (!c) return 'gray';
@@ -772,7 +777,7 @@ export default function App() {
     return 'gray';
   }
 
-  function varStateOf(v, clock) {
+  function varStateOf(v: { options: string[]; lastIdx: number; remain?: number | null }, clock: number): 'gone' | 'active' {
     if (!v.options || !v.options.length) return 'gone';
     const last = cuesRef.current[v.lastIdx];
     // 5-second linger after last use retires (whether variable was set or not)
@@ -781,7 +786,7 @@ export default function App() {
   }
 
   // ── Paint ─────────────────────────────────────────────────────────────────
-  function paintFrame(clock) {
+  function paintFrame(clock: number): void {
     const e = eng.current;
     const cues = cuesRef.current;
 
@@ -792,7 +797,7 @@ export default function App() {
     }
 
     for (const d of cardRefs.current) {
-      if (!d || !cues[d.i]) continue;
+      if (!d || !d.card || !cues[d.i]) continue;
       const c = cues[d.i];
       const st = stateOf(d.i, clock);
       const t = c.effTime - clock;
@@ -839,7 +844,7 @@ export default function App() {
       }
 
       // Countdown display
-      let tmr;
+      let tmr: string;
       if (c.type === 'phase') {
         tmr = st === 'phase' ? (e.started ? '§HOLD' : '§START') : (st === 'retired' ? '' : cdHTML(Math.max(0, t)));
       } else if (st === 'now') {
@@ -951,11 +956,11 @@ export default function App() {
     if (cur !== lastRenderCur.current) {
       const prev = lastRenderCur.current;
       if (prev >= 0 && renderRowRefs.current[prev]) {
-        const wrap = renderRowRefs.current[prev].row?.parentElement;
+        const wrap = renderRowRefs.current[prev]?.row?.parentElement;
         wrap?.classList.remove('rrow-cur');
       }
       if (cur >= 0 && renderRowRefs.current[cur]) {
-        const wrap = renderRowRefs.current[cur].row?.parentElement;
+        const wrap = renderRowRefs.current[cur]?.row?.parentElement;
         wrap?.classList.add('rrow-cur');
       }
       lastRenderCur.current = cur;
@@ -963,7 +968,7 @@ export default function App() {
   }
 
   // ── Register callbacks ────────────────────────────────────────────────────
-  const registerCard = useCallback((i, refs) => {
+  const registerCard = useCallback((i: number, refs: CardDomRefs) => {
     while (cardRefs.current.length <= i) cardRefs.current.push(null);
     const prev = cardRefs.current[i];
     cardRefs.current[i] = { i, ...refs, _st: null, _tmr: null, _lbl: null,
@@ -971,16 +976,16 @@ export default function App() {
     paintFrame(currentClock());
   }, []);
 
-  const unregisterCard = useCallback((i) => {
+  const unregisterCard = useCallback((i: number) => {
     if (cardRefs.current[i]) cardRefs.current[i] = null;
   }, []);
 
-  const registerVarRef = useCallback((idx, refs) => {
+  const registerVarRef = useCallback((idx: number, refs: VarCardDomRefs) => {
     while (varRefs.current.length <= idx) varRefs.current.push(null);
     varRefs.current[idx] = { ...refs, _st: null };
   }, []);
 
-  const registerRenderRow = useCallback((i, refs) => {
+  const registerRenderRow = useCallback((i: number, refs: RenderRowRef) => {
     while (renderRowRefs.current.length <= i) renderRowRefs.current.push(null);
     renderRowRefs.current[i] = refs;
     if (refs.row) {
@@ -991,11 +996,11 @@ export default function App() {
   }, []);
 
   // ── I/O ───────────────────────────────────────────────────────────────────
-  async function save() {
+  async function save(): Promise<void> {
     const content = serializeCSV(cuesRef.current);
-    if (window.showSaveFilePicker) {
+    if ('showSaveFilePicker' in window) {
       try {
-        const handle = await window.showSaveFilePicker({
+        const handle = await (window as Window & { showSaveFilePicker: (opts: object) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
           suggestedName: 'cuebey-timeline.tsv',
           types: [
             { description: 'TSV (tab-separated)', accept: { 'text/tab-separated-values': ['.tsv'] } },
@@ -1007,7 +1012,7 @@ export default function App() {
         await writable.close();
         return;
       } catch (err) {
-        if (err.name === 'AbortError') return;
+        if ((err as Error).name === 'AbortError') return;
       }
     }
     const a = document.createElement('a');
@@ -1016,9 +1021,9 @@ export default function App() {
     a.click();
   }
 
-  function copy() { navigator.clipboard?.writeText(serializeCSV(cuesRef.current)); }
+  function copy(): void { navigator.clipboard?.writeText(serializeCSV(cuesRef.current)); }
 
-  function onCardFocus(i) {
+  function onCardFocus(i: number): void {
     const e = eng.current;
     if (e.started && !e.paused && !e.phaseHold) return;
     setActiveTab('rendered');
@@ -1029,13 +1034,13 @@ export default function App() {
     }));
   }
 
-  function loadFile(file) {
+  function loadFile(file: File): void {
     const r = new FileReader();
     r.onload = () => {
       const offsetSec = parseTime(offsetText) || 0;
-      const { cues } = buildCues(r.result, offsetSec);
+      const { cues } = buildCues(r.result as string, offsetSec);
       // Normalize to TSV regardless of source format (CSV, old format, etc.)
-      setCsvText(cues.length > 0 ? serializeCSV(cues) : r.result);
+      setCsvText(cues.length > 0 ? serializeCSV(cues) : r.result as string);
     };
     r.readAsText(file);
   }
@@ -1056,14 +1061,8 @@ export default function App() {
         onGo={goRelease}
         onMinus={() => nudge(-0.5)}
         onPlus={() => nudge(0.5)}
-        onFrameStep={d => {
-          if (videoRef.current && videoSynced) videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime + d / fps);
-          else nudge(d / fps);
-        }}
-        fps={fps}
         onReset={reset}
         onToggleTimeline={() => setShowTimeline(v => !v)}
-        onLoadVideo={loadVideo}
         hideDone={hideDone}
         onToggleHideDone={() => setHideDone(v => !v)}
         locked={locked}
@@ -1133,6 +1132,7 @@ export default function App() {
         </div>
         <Variables
           vars={vars}
+          conflicts={varConflicts}
           engState={engState}
           onSetVar={setVar}
           registerVarRef={registerVarRef}

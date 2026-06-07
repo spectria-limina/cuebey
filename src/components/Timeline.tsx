@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { fmtClean, fmtHMS, trimNum, parseTime } from '../format.js';
-import { renderText, parseSetsFromRaw } from '../parser.js';
+import { useState, useRef, useEffect } from 'react';
+import { fmtClean, fmtHMS, trimNum, parseTime } from '../format.ts';
+import { renderText, parseSetsFromRaw } from '../parser.ts';
+import type { Cue, VarsRecord, ParseStatus, CueChanges, RenderRowRef } from '../types.ts';
 
 const COL_HEADERS = ['time', 'type', 'text', 'standby', 'ready', 'remain', 'vars', 'flags'];
 
 // Reconstruct the vars field text from a cue's sets array
-function setsToVarsText(sets) {
+function setsToVarsText(sets: Cue['sets']): string {
   if (!sets || !sets.length) return '';
   return sets.map(s => {
     const hasLabel = s.displayLabel && s.displayLabel !== s.name;
@@ -23,6 +24,34 @@ function setsToVarsText(sets) {
   }).join(';');
 }
 
+interface TimelineProps {
+  csvText: string;
+  onCsvChange: (text: string) => void;
+  parseStatus: ParseStatus;
+  metaText: string;
+  cues: Cue[];
+  vars: VarsRecord;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  onLoad: (file: File) => void;
+  onSave: () => void;
+  onCopy: () => void;
+  onSelect: (i: number) => void;
+  onSeek: (i: number) => void;
+  onHover: (i: number) => void;
+  onUnhover: (i: number) => void;
+  onReorder: (from: number, to: number) => void;
+  onNudge: (d: number) => void;
+  onEditCue: (i: number, changes: CueChanges) => void;
+  onDeleteCue: (i: number) => void;
+  onAddCue: (i: number, after: boolean) => void;
+  offsetSec: number;
+  getCurrentTime: () => number;
+  registerRenderRow: (i: number, refs: RenderRowRef) => void;
+  focusRowRef: React.RefObject<((i: number) => void) | null>;
+  locked: boolean;
+}
+
 export default function Timeline({
   csvText, onCsvChange, parseStatus, metaText,
   cues, vars, activeTab, onTabChange,
@@ -32,23 +61,25 @@ export default function Timeline({
   offsetSec, getCurrentTime,
   registerRenderRow, focusRowRef,
   locked,
-}) {
-  const fileRef = useRef(null);
-  const rlistRef = useRef(null);
-  const textareaRef = useRef(null);
-  const colHeaderRef = useRef(null);
-  const [expandedSet, setExpandedSet] = useState(() => new Set());
-  const [dragIdx, setDragIdx] = useState(null);
-  const [dragOverIdx, setDragOverIdx] = useState(null);
+}: TimelineProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const rlistRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const colHeaderRef = useRef<HTMLDivElement>(null);
+  const [expandedSet, setExpandedSet] = useState<Set<number>>(() => new Set());
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const isDraggingRef = useRef(false);
-  const dragScrollRef = useRef({ active: false, speed: 0, raf: null });
+
+  interface DragScrollState { active: boolean; speed: number; raf: number; }
+  const dragScrollRef = useRef<DragScrollState>({ active: false, speed: 0, raf: 0 });
 
   const onNudgeRef = useRef(onNudge);
   onNudgeRef.current = onNudge;
   useEffect(() => {
     const el = rlistRef.current;
     if (!el) return;
-    const handler = (e) => {
+    const handler = (e: WheelEvent) => {
       if (!e.shiftKey) return;
       e.preventDefault();
       onNudgeRef.current?.(e.deltaY / 100);
@@ -62,7 +93,7 @@ export default function Timeline({
     const el = rlistRef.current;
     if (!el) return;
     const ZONE = 60, MAX_SPEED = 6;
-    const handleDragOver = (e) => {
+    const handleDragOver = (e: DragEvent) => {
       if (!isDraggingRef.current) return;
       const rect = el.getBoundingClientRect();
       const y = e.clientY - rect.top;
@@ -98,15 +129,15 @@ export default function Timeline({
     };
   }, []);
 
-  if (focusRowRef) focusRowRef.current = (i) => {
-    setExpandedSet(prev => {
-      const next = new Set();
+  if (focusRowRef) focusRowRef.current = (i: number) => {
+    setExpandedSet(() => {
+      const next = new Set<number>();
       next.add(i);
       return next;
     });
   };
 
-  function toggleRow(i, shift) {
+  function toggleRow(i: number, shift: boolean) {
     setExpandedSet(prev => {
       const next = new Set(prev);
       if (next.has(i)) {
@@ -144,13 +175,13 @@ export default function Timeline({
           spellCheck={false}
           style={{ whiteSpace: 'pre', overflowX: 'auto', wordBreak: 'normal', overflowWrap: 'normal' }}
           onScroll={e => {
-            if (colHeaderRef.current) colHeaderRef.current.scrollLeft = e.target.scrollLeft;
+            if (colHeaderRef.current) colHeaderRef.current.scrollLeft = (e.target as HTMLTextAreaElement).scrollLeft;
           }}
           onKeyDown={e => {
             if (locked) return;
             if (e.key === 'Tab') {
               e.preventDefault();
-              const ta = e.target;
+              const ta = e.target as HTMLTextAreaElement;
               const start = ta.selectionStart, end = ta.selectionEnd;
               const next = ta.value.slice(0, start) + '\t' + ta.value.slice(end);
               onCsvChange(next);
@@ -164,7 +195,7 @@ export default function Timeline({
           <button className="ghost" onClick={onSave}>Save</button>
           <button className="ghost" onClick={onCopy}>Copy</button>
           <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden
-            onChange={e => { const f = e.target.files[0]; if (f) onLoad(f); }} />
+            onChange={e => { const f = e.target.files?.[0]; if (f) onLoad(f); }} />
         </div>
       </div>
 
@@ -206,6 +237,31 @@ export default function Timeline({
   );
 }
 
+interface RenderedRowProps {
+  i: number;
+  cue: Cue;
+  vars: VarsRecord;
+  onSelect: (i: number) => void;
+  onSeek: (i: number) => void;
+  onHover: (i: number) => void;
+  onUnhover: (i: number) => void;
+  onEditCue: ((i: number, changes: CueChanges) => void) | null;
+  onDeleteCue: ((i: number) => void) | null;
+  onAddCue: ((i: number, after: boolean) => void) | null;
+  offsetSec: number;
+  getCurrentTime: () => number;
+  registerRenderRow: (i: number, refs: RenderRowRef) => void;
+  expanded: boolean;
+  onToggle: (shift: boolean) => void;
+  locked: boolean;
+  isDragging: boolean;
+  isDragOver: boolean;
+  onDragStart: () => void;
+  onDragOver: (i: number) => void;
+  onDrop: (i: number) => void;
+  onDragEnd: () => void;
+}
+
 function RenderedRow({
   i, cue, vars,
   onSelect, onSeek, onHover, onUnhover,
@@ -213,8 +269,8 @@ function RenderedRow({
   offsetSec, getCurrentTime, registerRenderRow,
   expanded, onToggle, locked,
   isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd,
-}) {
-  const rowRef = useRef(null);
+}: RenderedRowProps) {
+  const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     registerRenderRow(i, { row: rowRef.current });
@@ -299,7 +355,19 @@ function RenderedRow({
   );
 }
 
-function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, onAddCue }) {
+type DurationField = 'standby' | 'warn' | 'remain';
+
+interface RowEditorProps {
+  i: number;
+  cue: Cue;
+  offsetSec: number;
+  getCurrentTime: () => number;
+  onEditCue: (i: number, changes: CueChanges) => void;
+  onDeleteCue: ((i: number) => void) | null;
+  onAddCue: ((i: number, after: boolean) => void) | null;
+}
+
+function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, onAddCue }: RowEditorProps) {
   const [type, setType] = useState(cue.type);
   const [text, setText] = useState(cue.text);
   const [timeStr, setTimeStr] = useState(() => fmtHMS(cue.raw));
@@ -308,9 +376,9 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
   const [remain, setRemain] = useState(() => cue.remain == null ? '' : trimNum(cue.remain));
   const [varsText, setVarsText] = useState(() => setsToVarsText(cue.sets));
 
-  function commit(changes) { onEditCue(i, changes); }
+  function commit(changes: CueChanges) { onEditCue(i, changes); }
 
-  function handleTypeChange(v) { setType(v); commit({ type: v }); }
+  function handleTypeChange(v: Cue['type']) { setType(v); commit({ type: v }); }
 
   function handleTimeBlur() {
     const t = parseTime(timeStr);
@@ -324,45 +392,62 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
     commit({ rawTime: s });
   }
 
-  function nudgeTime(delta) {
+  function nudgeTime(delta: number) {
     const base = parseTime(timeStr) ?? cue.raw;
     const s = fmtHMS(Math.max(0, base + delta));
     setTimeStr(s);
     commit({ rawTime: s });
   }
 
-  function handleDuration(field, val, setter) {
+  function handleDuration(field: DurationField, val: string, setter: (v: string) => void) {
     setter(val);
     const trimmed = val.trim();
     const n = trimmed === '' ? null : parseFloat(trimmed);
-    if (trimmed === '' || (n != null && isFinite(n) && n >= 0)) commit({ [field]: n });
+    if (trimmed === '' || (n != null && isFinite(n) && n >= 0)) commit({ [field]: n } as CueChanges);
   }
 
-  function durationFromNow(field, setter, isRemain) {
+  function durationFromNow(field: DurationField, setter: (v: string) => void, isRemain: boolean) {
     const tl = getCurrentTime();
     const d = isRemain ? Math.max(0, tl - cue.effTime) : Math.max(0, cue.effTime - tl);
     const s = trimNum(d);
     setter(s);
-    commit({ [field]: d });
+    commit({ [field]: d } as CueChanges);
   }
 
-  function clearDuration(field, setter) { setter(''); commit({ [field]: null }); }
+  function clearDuration(field: DurationField, setter: (v: string) => void) {
+    setter('');
+    commit({ [field]: null } as CueChanges);
+  }
 
   function handleVarsBlur() {
     commit({ sets: parseSetsFromRaw(varsText, '') });
   }
 
   // Annotation: effective time relative to offset
-  const effTime = cue.effTime;
   const rawTime = parseTime(timeStr) ?? cue.raw;
   const effDisplay = fmtClean(rawTime - offsetSec);
 
-  const TYPE_OPTIONS = [
+  const TYPE_OPTIONS: { value: Cue['type']; label: string }[] = [
     { value: 'call', label: 'Call' },
     { value: 'note', label: 'Note' },
     { value: 'event', label: 'Event' },
     { value: 'cast', label: 'Cast' },
     { value: 'phase', label: 'Phase' },
+  ];
+
+  interface DurationRowConfig {
+    field: DurationField;
+    label: string;
+    val: string;
+    setter: (v: string) => void;
+    isRemain: boolean;
+    nowTitle: string;
+  }
+
+  const durationRows: DurationRowConfig[] = [
+    { field: 'standby', label: 'Standby', val: standby, setter: setStandby, isRemain: false, nowTitle: 'Set to seconds remaining until this cue fires' },
+    { field: 'warn',    label: 'Ready',   val: ready,   setter: setReady,   isRemain: false, nowTitle: 'Set ready to time remaining until this cue fires' },
+    { field: 'remain',  label: 'Remain',  val: remain,  setter: setRemain,  isRemain: true,  nowTitle: 'Set remain to time elapsed since this cue fired' },
   ];
 
   return (
@@ -424,11 +509,7 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
       </div>
 
       {/* Standby / Ready / Remain */}
-      {[
-        { field: 'standby', label: 'Standby', val: standby, setter: setStandby, isRemain: false, nowTitle: 'Set to seconds remaining until this cue fires' },
-        { field: 'warn',    label: 'Ready',   val: ready,   setter: setReady,   isRemain: false, nowTitle: 'Set ready to time remaining until this cue fires' },
-        { field: 'remain',  label: 'Remain',  val: remain,  setter: setRemain,  isRemain: true,  nowTitle: 'Set remain to time elapsed since this cue fired' },
-      ].map(({ field, label, val, setter, isRemain, nowTitle }) => (
+      {durationRows.map(({ field, label, val, setter, isRemain, nowTitle }) => (
         <div key={field} className="re-row">
           <span className="re-lbl">{label}</span>
           <input

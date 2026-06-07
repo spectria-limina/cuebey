@@ -1,15 +1,30 @@
 import { useRef } from 'react';
+import type { RefObject } from 'react';
 
 const SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4];
 const FPS_OPTIONS = [24, 25, 29.97, 30, 60];
+
+interface VideoPanelProps {
+  videoRef: RefObject<HTMLVideoElement | null>;
+  videoLoaded: boolean;
+  synced: boolean;
+  onSetSync: () => void;
+  onClearSync: () => void;
+  onUnload: () => void;
+  onLoadFile: (file: File) => void;
+  onRateChange: (rate: number) => void;
+  fps: number;
+  onFpsChange: (fps: number) => void;
+  onFrameStep: (d: number) => void;
+}
 
 export default function VideoPanel({
   videoRef, videoLoaded, synced,
   onSetSync, onClearSync, onUnload,
   onLoadFile, onRateChange,
   fps, onFpsChange, onFrameStep,
-}) {
-  const fileRef = useRef(null);
+}: VideoPanelProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className={`video-panel${videoLoaded ? ' loaded' : ''}`}>
@@ -27,7 +42,7 @@ export default function VideoPanel({
           accept="video/*"
           hidden
           onChange={e => {
-            const f = e.target.files[0];
+            const f = e.target.files?.[0];
             if (f) { onLoadFile?.(f); e.target.value = ''; }
           }}
         />

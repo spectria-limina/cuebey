@@ -1,12 +1,20 @@
 import { useRef, useEffect } from 'react';
+import type { VarsRecord, VarState, EngStateSnapshot, VarCardDomRefs } from '../types.ts';
 
-export default function Variables({ vars, engState, onSetVar, registerVarRef }) {
+interface VariablesProps {
+  vars: VarsRecord;
+  conflicts: string[];
+  engState: EngStateSnapshot;
+  onSetVar: (name: string, val: string) => void;
+  registerVarRef: (idx: number, refs: VarCardDomRefs) => void;
+}
+
+export default function Variables({ vars, conflicts, engState, onSetVar, registerVarRef }: VariablesProps) {
   const varList = Object.values(vars)
     .filter(v => v && typeof v === 'object' && v.options && v.options.length)
     .sort((a, b) => a.first - b.first);
 
   const isEmpty = varList.length === 0;
-  const conflicts = vars._conflicts || [];
 
   return (
     <aside className="vars">
@@ -42,9 +50,16 @@ export default function Variables({ vars, engState, onSetVar, registerVarRef }) 
   );
 }
 
-function VarCard({ v, idx, onSetVar, registerVarRef }) {
-  const slotRef = useRef(null);
-  const cardRef = useRef(null);
+interface VarCardProps {
+  v: VarState;
+  idx: number;
+  onSetVar: (name: string, val: string) => void;
+  registerVarRef: (idx: number, refs: VarCardDomRefs) => void;
+}
+
+function VarCard({ v, idx, onSetVar, registerVarRef }: VarCardProps) {
+  const slotRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     registerVarRef(idx, { slot: slotRef.current, card: cardRef.current, v });

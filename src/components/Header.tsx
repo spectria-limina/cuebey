@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import type { RefObject } from 'react';
+import type { EngStateSnapshot } from '../types.ts';
 
-const HELP_ROWS = [
+const HELP_ROWS: [string, string][] = [
   ['Space',   'Play / Pause'],
   ['Enter',   'GO (release phase hold) / Start'],
   ['R',       'Reset to beginning'],
@@ -10,16 +11,37 @@ const HELP_ROWS = [
   ['1 – 9',   'Set the Nth variable option on the current active card'],
 ];
 
+interface HeaderProps {
+  engState: EngStateSnapshot;
+  videoLoaded: boolean;
+  videoSynced: boolean;
+  offsetText: string;
+  onOffsetChange: (text: string) => void;
+  clockRef: RefObject<HTMLDivElement | null>;
+  onPlay: () => void;
+  onGo: () => void;
+  onMinus: () => void;
+  onPlus: () => void;
+  onReset: () => void;
+  onToggleTimeline: () => void;
+  hideDone: boolean;
+  onToggleHideDone: () => void;
+  locked: boolean;
+  onToggleLock: () => void;
+  showHelp: boolean;
+  onToggleHelp: () => void;
+}
+
 export default function Header({
   engState, videoLoaded, videoSynced, offsetText, onOffsetChange, clockRef,
   onPlay, onGo, onMinus, onPlus, onReset, onToggleTimeline,
   hideDone, onToggleHideDone,
   locked, onToggleLock,
   showHelp, onToggleHelp,
-}) {
+}: HeaderProps) {
   const { started, paused, phaseHold } = engState;
 
-  let playLabel, playClass;
+  let playLabel: string, playClass: string;
   if (phaseHold) {
     playLabel = 'GO ▸'; playClass = 'play go';
   } else if (!started && !videoSynced) {

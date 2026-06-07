@@ -1,4 +1,5 @@
-import { parseTime, num, fmtHMS, trimNum, esc } from './format.js';
+import { parseTime, num, fmtHMS, trimNum, esc } from './format.ts';
+import type { Cue, CueType, VarSet, VarState, VarsRecord, BuildCuesResult, ParsedFlags } from './types.ts';
 
 export const WARN_DEFAULT = 2;
 export const TOKEN = /{([a-zA-Z0-9_|]+)(?::([^}]*))?}/g;
@@ -23,8 +24,8 @@ export const SEED_CSV =
 
 // ── CSV parser (handles both CSV and TSV) ─────────────────────────────────────
 
-function parseTSV(text) {
-  const rows = [];
+function parseTSV(text: string): string[][] {
+  const rows: string[][] = [];
   for (const line of text.split('\n')) {
     if (line === '') continue;
     rows.push(line.split('\t'));
@@ -32,9 +33,9 @@ function parseTSV(text) {
   return rows;
 }
 
-function parseCSVText(text) {
-  const rows = [];
-  let row = [], field = '', inq = false, i = 0;
+function parseCSVText(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [], field = '', inq = false, i = 0;
   while (i < text.length) {
     const ch = text[i];
     if (inq) {
@@ -54,7 +55,7 @@ function parseCSVText(text) {
   return rows;
 }
 
-function parseRows(text) {
+function parseRows(text: string): string[][] {
   // Detect TSV by checking if the first non-empty, non-comment line has a tab
   const firstLine = text.split('\n').find(l => l.trim() && !l.trim().startsWith('#')) || '';
   if (firstLine.includes('\t')) return parseTSV(text);
@@ -63,13 +64,13 @@ function parseRows(text) {
 
 // ── Cell escaping for TSV output ──────────────────────────────────────────────
 
-export function tsvCell(v) {
+export function tsvCell(v: unknown): string {
   // TSV doesn't support tabs in values — replace with space as a safe fallback
   return String(v == null ? '' : v).replace(/\t/g, ' ');
 }
 
 // Keep csvCell for any code still calling it (produces TSV-safe output too)
-export function csvCell(v) { return tsvCell(v); }
+export function csvCell(v: unknown): string { return tsvCell(v); }
 
 // ── Variable set parsing ──────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ export function csvCell(v) { return tsvCell(v); }
 // Syntax in vars column: {varname|Display Name:val=Label,val2=Label2,...}
 // Semicolon-separates multiple variable definitions.
 // Legacy set-only syntax: plain `varname` + pipe-separated options in optGroups.
-export function parseSetsFromRaw(rawSet, rawOpts) {
+export function parseSetsFromRaw(rawSet: string, rawOpts: string): VarSet[] {
   const entries = (rawSet || '').trim().split(';').map(x => x.trim()).filter(Boolean);
   const optGroups = (rawOpts || '').split(';');
   return entries.map((entry, k) => {
@@ -109,8 +110,8 @@ export function parseSetsFromRaw(rawSet, rawOpts) {
 
 // ── Flags parsing ─────────────────────────────────────────────────────────────
 
-function parseFlags(flagsStr) {
-  const flags = { disabled: false, syncPoint: false, castbarDuration: null };
+function parseFlags(flagsStr: string): ParsedFlags {
+  const flags: ParsedFlags = { disabled: false, syncPoint: false, castbarDuration: null };
   if (!flagsStr) return flags;
   for (const flag of flagsStr.split(',').map(f => f.trim()).filter(Boolean)) {
     if (flag === 'disabled') flags.disabled = true;
@@ -125,12 +126,13 @@ function parseFlags(flagsStr) {
 
 // ── Build cues from text ──────────────────────────────────────────────────────
 
-export function buildCues(csvText, offsetSec) {
+export function buildCues(csvText: string, offsetSec: number): BuildCuesResult {
   const rows = parseRows(csvText);
-  const cues = [];
-  const vars = {};
-  const errs = [];
-  let header = null, hi = {};
+  const cues: Cue[] = [];
+  const vars: VarsRecord = {};
+  const errs: number[] = [];
+  let header: string[] | null = null;
+  const hi: Record<string, number> = {};
 
   rows.forEach((r, ri) => {
     const first = (r[0] || '').trim();
@@ -147,7 +149,7 @@ export function buildCues(csvText, offsetSec) {
     if (!r.length || r.every(x => x.trim() === '')) return;
     if (first.startsWith('#')) return;
 
-    const cell = name => (hi[name] != null ? (r[hi[name]] || '') : '');
+    const cell = (name: string) => (hi[name] != null ? (r[hi[name]] || '') : '');
     const t = parseTime(cell('time').trim());
     if (t === null) { errs.push(ri + 1); return; }
 
@@ -175,7 +177,7 @@ export function buildCues(csvText, offsetSec) {
     cues.push({
       raw: t,
       effTime: t - offsetSec,
-      type: rawType,
+      type: rawType as CueType,
       text,
       standby: num(cell('standby')),
       warn: num(warnRaw),
@@ -190,7 +192,7 @@ export function buildCues(csvText, offsetSec) {
     });
   });
 
-  function ensure(n) {
+  function ensure(n: string): VarState {
     return vars[n] || (vars[n] = {
       name: n, label: n,
       options: [], labels: [], value: null,
@@ -199,8 +201,8 @@ export function buildCues(csvText, offsetSec) {
   }
 
   cues.forEach((c, i) => {
-    const refSet = new Set();
-    const ref = nm => {
+    const refSet = new Set<string>();
+    const ref = (nm: string) => {
       const v = ensure(nm);
       if (c.effTime < v.first) v.first = c.effTime;
       if (c.effTime > v.last || v.lastIdx < 0) { v.last = c.effTime; v.lastIdx = i; }
@@ -219,7 +221,7 @@ export function buildCues(csvText, offsetSec) {
       if (v.defIdx < 0) v.defIdx = i;
       ref(s.name);
     });
-    let m;
+    let m: RegExpExecArray | null;
     TOKEN.lastIndex = 0;
     while ((m = TOKEN.exec(c.text))) m[1].split('|').map(x => x.trim()).filter(Boolean).forEach(ref);
     c.varRefs = [...refSet];
@@ -230,7 +232,7 @@ export function buildCues(csvText, offsetSec) {
 
 // ── Serializer ────────────────────────────────────────────────────────────────
 
-export function serializeVarsField(sets) {
+export function serializeVarsField(sets: VarSet[]): string {
   if (!sets || !sets.length) return '';
   return sets.map(s => {
     const hasDisplayLabel = s.displayLabel && s.displayLabel !== s.name;
@@ -247,19 +249,19 @@ export function serializeVarsField(sets) {
   }).join(';');
 }
 
-function serializeFlagsField(c) {
-  const flags = [];
+function serializeFlagsField(c: Cue): string {
+  const flags: string[] = [];
   if (c.disabled) flags.push('disabled');
   if (c.syncPoint) flags.push('sync');
   if (c.castbarDuration != null) flags.push('castbar=' + trimNum(c.castbarDuration));
   return flags.join(',');
 }
 
-export function serializeCSV(cues) {
+export function serializeCSV(cues: Cue[]): string {
   const cols = ['time', 'type', 'text', 'standby', 'ready', 'remain', 'vars', 'flags'];
   let out = cols.join('\t') + '\n';
   cues.forEach(c => {
-    const n = v => (v == null ? '' : trimNum(v));
+    const n = (v: number | null) => (v == null ? '' : trimNum(v));
     out += [
       tsvCell(fmtHMS(c.raw)),
       tsvCell(c.type),
@@ -276,12 +278,12 @@ export function serializeCSV(cues) {
 
 // ── Token renderer ────────────────────────────────────────────────────────────
 
-export function resolveToken(namesStr, mapStr, vars) {
+export function resolveToken(namesStr: string, mapStr: string | undefined, vars: VarsRecord): string {
   const names = namesStr.split('|').map(s => s.trim()).filter(Boolean);
   const vals = names.map(n => (vars[n] && vars[n].value != null) ? vars[n].value : null);
-  let shown = null;
+  let shown: string | null = null;
   if (mapStr != null) {
-    let def = null, hit = null;
+    let def: string | null = null, hit: string | null = null;
     mapStr.split(',').forEach(rule => {
       const eq = rule.indexOf('=');
       if (eq < 0) return;
@@ -305,12 +307,13 @@ export function resolveToken(namesStr, mapStr, vars) {
     : '<span class="vval">' + esc(shown) + '</span>';
 }
 
-export function renderText(raw, vars) {
-  let out = '', last = 0, m;
+export function renderText(raw: string, vars: VarsRecord): string {
+  let out = '', last = 0;
+  let m: RegExpExecArray | null;
   TOKEN.lastIndex = 0;
   while ((m = TOKEN.exec(raw))) {
     out += esc(raw.slice(last, m.index));
-    out += resolveToken(m[1], m[2], vars);
+    out += resolveToken(m[1], m[2] as string | undefined, vars);
     last = TOKEN.lastIndex;
   }
   out += esc(raw.slice(last));
