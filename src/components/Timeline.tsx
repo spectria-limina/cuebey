@@ -4,7 +4,6 @@ import { renderText, parseSetsFromRaw } from '../parser.ts';
 import type { Cue, VarsRecord, ParseStatus, CueChanges, RenderRowRef } from '../types.ts';
 
 const COL_HEADERS = ['time', 'type', 'text', 'standby', 'ready', 'remain', 'vars', 'flags'];
-const WHEEL_SEC_PER_STROKE = 10; // seconds scrolled per wheel tick
 
 // Reconstruct the vars field text from a cue's sets array
 function setsToVarsText(sets: Cue['sets']): string {
@@ -52,7 +51,6 @@ interface TimelineProps {
   focusRowRef: React.RefObject<((i: number) => void) | null>;
   locked: boolean;
   editorClockDisplayRef: React.RefObject<HTMLDivElement | null>;
-  onEditorWheelNudge: (delta: number) => boolean;
 }
 
 export default function Timeline({
@@ -65,7 +63,6 @@ export default function Timeline({
   registerRenderRow, focusRowRef,
   locked,
   editorClockDisplayRef,
-  onEditorWheelNudge,
 }: TimelineProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const rlistRef = useRef<HTMLDivElement>(null);
@@ -81,8 +78,6 @@ export default function Timeline({
 
   const onNudgeRef = useRef(onNudge);
   onNudgeRef.current = onNudge;
-  const onEditorWheelNudgeRef = useRef(onEditorWheelNudge);
-  onEditorWheelNudgeRef.current = onEditorWheelNudge;
   useEffect(() => {
     const el = rlistRef.current;
     if (!el) return;
@@ -90,9 +85,6 @@ export default function Timeline({
       if (e.shiftKey) {
         e.preventDefault();
         onNudgeRef.current?.(e.deltaY / 100);
-      } else {
-        const consumed = onEditorWheelNudgeRef.current?.(e.deltaY / 100 * WHEEL_SEC_PER_STROKE);
-        if (consumed) e.preventDefault();
       }
     };
     el.addEventListener('wheel', handler, { passive: false });

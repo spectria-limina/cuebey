@@ -398,13 +398,6 @@ export default function App() {
     }
   }
 
-  function handleEditorWheelNudge(delta: number): boolean {
-    const e = eng.current;
-    if (e.started && !e.paused && !e.phaseHold) return false; // live — don't consume
-    setEditorClock(editorClockRef.current + delta);
-    return true;
-  }
-
   function editCue(i: number, changes: CueChanges): void {
     const c = cuesRef.current[i];
     if (!c) return;
@@ -1211,7 +1204,6 @@ export default function App() {
           focusRowRef={focusRowRef}
           locked={locked}
           editorClockDisplayRef={editorClockDisplayRef}
-          onEditorWheelNudge={handleEditorWheelNudge}
         />
         <div className="resize-handle resize-handle-left" onMouseDown={startResizeLeft} />
         <div className="center-col">
