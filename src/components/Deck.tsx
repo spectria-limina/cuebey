@@ -200,7 +200,7 @@ function DeckCard({
                       onClick={() => onDone(i)}
                       disabled={doneDisabled}
                     >
-                      ▼▼
+                      ⇓
                     </button>
                   )}
                 </>

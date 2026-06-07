@@ -888,7 +888,7 @@ export default function App() {
       if (d.doneBtn && c.type !== 'phase') {
         const showRestore = st === 'retired';
         const dis = e.started && e.videoSynced && !e.paused && !e.phaseHold;
-        const newText = showRestore ? '↺' : '▼▼';
+        const newText = showRestore ? '↺' : '⇓';
         const newCls = showRestore ? 'restore-btn' : 'skip-btn';
         if (d.doneBtn.textContent !== newText) d.doneBtn.textContent = newText;
         if (d.doneBtn.className !== newCls) d.doneBtn.className = newCls;
