@@ -180,6 +180,7 @@ main.solo .editor { display: none; }
 /* Dragging / disabled */
 .rrow.dragging { opacity: 0.35; }
 .rrow.rrow-disabled { opacity: 0.4; }
+.rrow.rrow-disabled .rc { text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.3); }
 .drag-insert-line { height: 2px; background: var(--blue); margin: 0 12px; }
 
 .rrow-drag { cursor: grab; color: var(--ink-faint); font-size: 13px; flex: none; user-select: none; opacity: 0; transition: opacity .1s; }
@@ -271,6 +272,7 @@ main.solo .editor { display: none; }
 .slot.gone { grid-template-rows: 0fr; opacity: 0; margin: 0 !important; pointer-events: none; }
 .slot.dimmed .cardwrap { opacity: 0.35; }
 .slot.slot-disabled .cardwrap { opacity: 0.22; }
+.slot.slot-disabled .card-text { text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.4); }
 .cardwrap { overflow: hidden; min-height: 0; }
 .deck .slot { margin-bottom: 12px; }
 .deck .slot:last-child { margin-bottom: 0; }

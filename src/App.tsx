@@ -817,11 +817,11 @@ export default function App() {
 
       // Slot visibility
       const isDisabled = c.disabled;
-      const gone = hideDoneRef.current && (st === 'retired' || isDisabled);
+      const gone = hideDoneRef.current && st === 'retired' && !isDisabled;
       let slotCls = 'slot';
-      if (gone) slotCls += ' gone';
+      if (isDisabled) slotCls += ' slot-disabled';
+      else if (gone) slotCls += ' gone';
       else if (st === 'retired') slotCls += ' dimmed';
-      else if (isDisabled) slotCls += ' slot-disabled';
       if (d.slot && d.slot.className !== slotCls) d.slot.className = slotCls;
 
       if (st !== d._st) {
