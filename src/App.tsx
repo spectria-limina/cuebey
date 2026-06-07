@@ -69,7 +69,7 @@ export default function App() {
   }, [hideDone]);
 
   // Animated DOM refs
-  const clockDisplayRef = useRef<HTMLDivElement>(null);
+  const clockDisplayRef = useRef<HTMLInputElement>(null);
   const cardRefs = useRef<(CardRef | null)[]>([]);
   const varRefs = useRef<(VarCardRef | null)[]>([]);
   const renderRowRefs = useRef<(RenderRowRef | null)[]>([]);
@@ -486,6 +486,25 @@ export default function App() {
     }
   }
 
+  function seekToTime(t: number): void {
+    const e = eng.current;
+    const v = videoRef.current;
+    t = Math.max(0, t);
+    if (e.videoSynced && v) {
+      const vt = getVideoFromTimeline(t);
+      if (vt != null) v.currentTime = Math.max(0, vt);
+    } else if (!e.started || e.paused || e.phaseHold) {
+      e.frozenClock = t;
+      e.prevClock = t;
+      paintFrame(t);
+    } else {
+      // Running freestanding: re-anchor
+      e.syncTime = t;
+      e.syncPerf = performance.now();
+      e.prevClock = t;
+    }
+  }
+
   // ── Deck auto-scroll ─────────────────────────────────────────────────────
   function smoothScrollDeck(deckEl: HTMLElement, targetScrollTop: number, duration = 800): void {
     const start = deckEl.scrollTop;
@@ -804,8 +823,10 @@ export default function App() {
     const cues = cuesRef.current;
 
     if (clockDisplayRef.current) {
-      clockDisplayRef.current.textContent = fmtClock(clock);
-      clockDisplayRef.current.className = 'clock' +
+      if (document.activeElement !== clockDisplayRef.current) {
+        clockDisplayRef.current.value = fmtClock(clock);
+      }
+      clockDisplayRef.current.className = 'clock-input' +
         (e.phaseHold ? ' hold' : (e.started && !e.paused ? ' run' : ''));
     }
 
@@ -1081,6 +1102,10 @@ export default function App() {
         onToggleLock={() => setLocked(v => !v)}
         showHelp={showHelp}
         onToggleHelp={() => setShowHelp(v => !v)}
+        onLoadVideo={loadVideo}
+        onUnloadVideo={unloadVideo}
+        onSpeedChange={setVideoRate}
+        onClockSeek={seekToTime}
       />
       <main className={showTimeline ? '' : 'solo'}>
         <Timeline

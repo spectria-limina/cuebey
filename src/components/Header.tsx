@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import type { RefObject } from 'react';
+import { parseTime } from '../format.ts';
 import type { EngStateSnapshot } from '../types.ts';
 
 const HELP_ROWS: [string, string][] = [
@@ -11,13 +13,15 @@ const HELP_ROWS: [string, string][] = [
   ['1 – 9',   'Set the Nth variable option on the current active card'],
 ];
 
+const SPEED_OPTIONS = [0.25, 0.5, 1, 1.5, 2];
+
 interface HeaderProps {
   engState: EngStateSnapshot;
   videoLoaded: boolean;
   videoSynced: boolean;
   offsetText: string;
   onOffsetChange: (text: string) => void;
-  clockRef: RefObject<HTMLDivElement | null>;
+  clockRef: RefObject<HTMLInputElement | null>;
   onPlay: () => void;
   onGo: () => void;
   onMinus: () => void;
@@ -30,6 +34,10 @@ interface HeaderProps {
   onToggleLock: () => void;
   showHelp: boolean;
   onToggleHelp: () => void;
+  onLoadVideo: (file: File) => void;
+  onUnloadVideo: () => void;
+  onSpeedChange: (rate: number) => void;
+  onClockSeek: (t: number) => void;
 }
 
 export default function Header({
@@ -38,8 +46,10 @@ export default function Header({
   hideDone, onToggleHideDone,
   locked, onToggleLock,
   showHelp, onToggleHelp,
+  onLoadVideo, onUnloadVideo, onSpeedChange, onClockSeek,
 }: HeaderProps) {
   const { started, paused, phaseHold } = engState;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   let playLabel: string, playClass: string;
   if (phaseHold) {
@@ -50,6 +60,30 @@ export default function Header({
     playLabel = '▶ Resume'; playClass = 'play paused';
   } else {
     playLabel = '❚❚ Pause'; playClass = 'play';
+  }
+
+  function handleClockKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const t = parseTime(e.currentTarget.value);
+      if (t !== null) onClockSeek(t);
+      else e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      e.currentTarget.blur();
+    }
+  }
+
+  function handleClockBlur(e: React.FocusEvent<HTMLInputElement>) {
+    // Let paintFrame restore the value on next animation tick
+    // by just clearing — paintFrame will re-fill on next call
+    e.currentTarget.value = e.currentTarget.value; // no-op, paintFrame handles it
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) onLoadVideo(file);
+    // Reset so the same file can be re-loaded
+    e.target.value = '';
   }
 
   return (
@@ -63,11 +97,19 @@ export default function Header({
         <button className="nudge ghost" onClick={onMinus}>−0.5s</button>
         <button className={playClass} onClick={phaseHold ? onGo : onPlay}>{playLabel}</button>
         <button className="nudge ghost" onClick={onPlus}>+0.5s</button>
-        <div className="clock" ref={clockRef}>0:00.0</div>
+        <input
+          className="clock-input"
+          ref={clockRef}
+          defaultValue="0:00.0"
+          onKeyDown={handleClockKeyDown}
+          onBlur={handleClockBlur}
+          spellCheck={false}
+          autoComplete="off"
+        />
         <button className="ghost" onClick={onReset}>⟲ Reset</button>
-      </div>
 
-      <div className="header-controls">
+        <span className="transport-sep" />
+
         <label className="offset">
           Offset{' '}
           <input
@@ -76,19 +118,47 @@ export default function Header({
             spellCheck={false}
           />
         </label>
+
+        <span className="transport-sep" />
+
+        <select
+          className="speed-select"
+          defaultValue={1}
+          onChange={e => onSpeedChange(Number(e.target.value))}
+          disabled={!videoLoaded}
+          title="Playback speed"
+        >
+          {SPEED_OPTIONS.map(s => (
+            <option key={s} value={s}>{s}×</option>
+          ))}
+        </select>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/*"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+        {videoLoaded ? (
+          <button className="ghost" onClick={onUnloadVideo}>⏏ Unload Video</button>
+        ) : (
+          <button className="ghost" onClick={() => fileInputRef.current?.click()}>▶ Load Video</button>
+        )}
+      </div>
+
+      <div className="header-controls">
         <button className="ghost" onClick={onToggleTimeline}>⤢ Timeline</button>
         <label className="toggle">
           <input type="checkbox" checked={hideDone} onChange={onToggleHideDone} />
           <span className="toggle-slider" />
           <span className="toggle-label">Hide Done</span>
         </label>
-        <button
-          className={'lock-btn ghost' + (locked ? ' locked' : '')}
-          onClick={onToggleLock}
-          title={locked ? 'Unlock editing (L)' : 'Lock editing (L)'}
-        >
-          {locked ? '🔒 Locked' : '🔓 Lock'}
-        </button>
+        <label className="toggle">
+          <input type="checkbox" checked={locked} onChange={onToggleLock} />
+          <span className="toggle-slider" />
+          <span className="toggle-label">Lock</span>
+        </label>
         <button className="ghost help-btn" onClick={onToggleHelp} title="Keyboard shortcuts">?</button>
       </div>
 
