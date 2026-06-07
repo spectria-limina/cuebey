@@ -1240,6 +1240,9 @@ export default function App() {
             registerCard={registerCard}
             unregisterCard={unregisterCard}
             locked={locked}
+            onEditCue={editCue}
+            getCurrentTime={currentClock}
+            offsetSec={parseTime(offsetText) || 0}
           />
         </div>
         <div className="resize-handle resize-handle-right" onMouseDown={startResizeRight} />

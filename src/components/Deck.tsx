@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { renderText } from '../parser.ts';
-import type { Cue, VarsRecord, EngStateSnapshot, CardDomRefs } from '../types.ts';
+import { fmtHMS } from '../format.ts';
+import type { Cue, VarsRecord, EngStateSnapshot, CardDomRefs, CueChanges } from '../types.ts';
 
 interface DeckProps {
   cues: Cue[];
@@ -19,13 +20,17 @@ interface DeckProps {
   registerCard: (i: number, refs: CardDomRefs) => void;
   unregisterCard: (i: number) => void;
   locked: boolean;
+  onEditCue: (i: number, changes: CueChanges) => void;
+  getCurrentTime: () => number;
+  offsetSec: number;
 }
 
 export default function Deck({
   cues, vars, engState, doneDisabled,
   onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus, onDoubleClick,
   onHover, onUnhover, onToggleDisabled,
-  registerCard, unregisterCard,
+  registerCard, unregisterCard, locked,
+  onEditCue, getCurrentTime, offsetSec,
 }: DeckProps) {
   return (
     <section className="deck" id="deck">
@@ -48,6 +53,10 @@ export default function Deck({
           onToggleDisabled={onToggleDisabled}
           registerCard={registerCard}
           unregisterCard={unregisterCard}
+          locked={locked}
+          onEditCue={onEditCue}
+          getCurrentTime={getCurrentTime}
+          offsetSec={offsetSec}
         />
       ))}
     </section>
@@ -71,13 +80,18 @@ interface DeckCardProps {
   onToggleDisabled: (i: number) => void;
   registerCard: (i: number, refs: CardDomRefs) => void;
   unregisterCard: (i: number) => void;
+  locked: boolean;
+  onEditCue: (i: number, changes: CueChanges) => void;
+  getCurrentTime: () => number;
+  offsetSec: number;
 }
 
 function DeckCard({
   i, cue, vars, engState, doneDisabled,
   onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus, onDoubleClick,
   onHover, onUnhover, onToggleDisabled,
-  registerCard, unregisterCard,
+  registerCard, unregisterCard, locked,
+  onEditCue, getCurrentTime, offsetSec,
 }: DeckCardProps) {
   const slotRef    = useRef<HTMLDivElement>(null);
   const cardRef    = useRef<HTMLDivElement>(null);
@@ -150,9 +164,29 @@ function DeckCard({
                     </div>
                   ))}
                   {(isEvent || isCast) && (
-                    <button className="sync-btn" onClick={() => onSyncEntry(i)}>
-                      ⊕ Sync
-                    </button>
+                    <>
+                      <button className="sync-btn" onClick={() => onSyncEntry(i)}>⊕ Sync</button>
+                      {!locked && (
+                        <div className="settime-btns">
+                          <button className="settime-btn" title="Set cue time to now" onClick={() => {
+                            const t = getCurrentTime();
+                            onEditCue(i, { rawTime: fmtHMS(Math.max(0, t + offsetSec)) });
+                          }}>↓ Now</button>
+                          <button className="settime-btn" title="Set ready window to start now" onClick={() => {
+                            const t = getCurrentTime();
+                            onEditCue(i, { warn: Math.max(0, cue.effTime - t) });
+                          }}>↓ Ready</button>
+                          <button className="settime-btn" title="Set standby to start now" onClick={() => {
+                            const t = getCurrentTime();
+                            onEditCue(i, { standby: Math.max(0, cue.effTime - t) });
+                          }}>↓ Standby</button>
+                          <button className="settime-btn" title="Set remain to elapsed since cue" onClick={() => {
+                            const t = getCurrentTime();
+                            onEditCue(i, { remain: Math.max(0, t - cue.effTime) });
+                          }}>↓ Remain</button>
+                        </div>
+                      )}
+                    </>
                   )}
                   {cue.disabled ? (
                     <button
