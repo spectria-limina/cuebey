@@ -72,6 +72,8 @@ export default function App() {
 
   // Animated DOM refs
   const clockDisplayRef = useRef<HTMLInputElement>(null);
+  const editorClockRef = useRef<number>(0);
+  const editorClockDisplayRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(CardRef | null)[]>([]);
   const varRefs = useRef<(VarCardRef | null)[]>([]);
   const renderRowRefs = useRef<(RenderRowRef | null)[]>([]);
@@ -357,10 +359,7 @@ export default function App() {
   }
 
   function handleSeek(i: number): void {
-    // Seek the clock to ~5s before the selected cue (double-click action)
-    const e = eng.current;
-    if (e.started && !e.paused && !e.phaseHold) return;
-    maybeSeek(i);
+    handleDoubleClick(i);
   }
 
   function handleHover(i: number): void {
@@ -375,6 +374,33 @@ export default function App() {
     if (hoveredIdxRef.current !== i) return;
     hoveredIdxRef.current = -1;
     applyHoveredClass(i, false);
+  }
+
+  function setEditorClock(t: number): void {
+    editorClockRef.current = Math.max(0, t);
+    if (editorClockDisplayRef.current) {
+      editorClockDisplayRef.current.textContent = fmtClock(editorClockRef.current);
+    }
+  }
+
+  function handleDoubleClick(i: number): void {
+    const e = eng.current;
+    const c = cuesRef.current[i];
+    if (!c) return;
+    if (e.started && !e.paused && !e.phaseHold) return; // live — no seeking
+    if (e.started && (e.paused || e.phaseHold)) {
+      // Paused/held: seek playback to 5s before this cue
+      maybeSeek(i);
+    } else {
+      // Not started: set editor clock to this cue's time
+      setEditorClock(c.effTime);
+    }
+  }
+
+  function handleEditorWheelNudge(delta: number): void {
+    const e = eng.current;
+    if (e.started && !e.paused && !e.phaseHold) return; // running — ignore
+    setEditorClock(editorClockRef.current + delta);
   }
 
   function editCue(i: number, changes: CueChanges): void {
@@ -832,6 +858,13 @@ export default function App() {
         (e.phaseHold ? ' hold' : (e.started && !e.paused ? ' run' : ''));
     }
 
+    if (e.started && !e.paused && !e.phaseHold) {
+      editorClockRef.current = clock;
+      if (editorClockDisplayRef.current) {
+        editorClockDisplayRef.current.textContent = fmtClock(clock);
+      }
+    }
+
     for (const d of cardRefs.current) {
       if (!d || !d.card || !cues[d.i]) continue;
       const c = cues[d.i];
@@ -1172,6 +1205,8 @@ export default function App() {
           registerRenderRow={registerRenderRow}
           focusRowRef={focusRowRef}
           locked={locked}
+          editorClockDisplayRef={editorClockDisplayRef}
+          onEditorWheelNudge={handleEditorWheelNudge}
         />
         <div className="resize-handle resize-handle-left" onMouseDown={startResizeLeft} />
         <div className="center-col">
@@ -1198,6 +1233,7 @@ export default function App() {
             onSyncEntry={onSyncEntry}
             onPhaseBtn={() => { if (engState.phaseHold) goRelease(); else if (!engState.started) start(); }}
             onCardFocus={onCardFocus}
+            onDoubleClick={handleDoubleClick}
             onHover={handleHover}
             onUnhover={handleUnhover}
             onToggleDisabled={toggleDisabled}

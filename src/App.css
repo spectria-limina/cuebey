@@ -173,6 +173,13 @@ main.solo .resize-handle-left { display: none; }
 /* Rendered overview */
 .rlist-head { display: flex; align-items: center; justify-content: flex-end; padding: 4px 10px; border-bottom: 1px solid var(--line-soft); flex-shrink: 0; gap: 7px; }
 .rlist-close-all { font-size: 10.5px; padding: 3px 9px; }
+.editor-clock {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--ink-dim);
+  letter-spacing: .03em; padding: 2px 8px; border: 1px solid var(--line);
+  border-radius: 5px; background: #0c0e13; min-width: 70px; text-align: center;
+  margin-right: auto;
+}
 .rlist { flex: 1; min-height: 0; overflow: auto; padding: 4px 0; }
 .rrow-wrap { border-bottom: 1px solid var(--line-soft); border-left: 2px solid transparent; border-top: 2px solid transparent; }
 .rrow-wrap.drag-over { border-top-color: var(--blue); }
