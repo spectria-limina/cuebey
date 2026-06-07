@@ -439,9 +439,11 @@ main.solo .editor { display: none; }
 .card.ui-hovered { border-color: rgba(86,168,232,.5); }
 
 /* Variable token display */
-.vval { color: #fff; font-weight: 700; }
+.vval { color: #f5d060; font-weight: 700; }
 .vunset { color: var(--vio); opacity: .85; font-style: italic; }
 .is-gray .vval { color: var(--vgray); }
+.card.is-now .vval { color: #fff; font-weight: 800; }
+.card.is-now .vunset { color: #c8b0ff; opacity: 1; }
 
 /* ── Right: variables panel ── */
 .vars { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
