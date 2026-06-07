@@ -491,7 +491,7 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
           onChange={e => setText(e.target.value)}
           onBlur={() => commit({ text })}
           spellCheck={false}
-          rows={text.length > 60 ? 2 : 1}
+          rows={2}
         />
       </div>
 
