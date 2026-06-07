@@ -1,10 +1,20 @@
+import { useRef } from 'react';
+
 export default function Header({
-  engState, offsetText, onOffsetChange, clockRef,
-  onPlay, onMinus, onPlus, onReset, onToggleTimeline,
+  engState, videoLoaded, videoSynced, offsetText, onOffsetChange, clockRef,
+  onPlay, onMinus, onPlus, onReset, onToggleTimeline, onLoadVideo,
 }) {
-  const { started, paused } = engState;
-  const playLabel = !started ? '▶ Start' : paused ? '▶ Resume' : '❚❚ Pause';
-  const playClass = 'play' + (!started || !paused ? '' : ' paused');
+  const fileRef = useRef(null);
+  const { started, paused, phaseHold } = engState;
+
+  let playLabel, playClass;
+  if (!started && !videoSynced) {
+    playLabel = '▶ Start'; playClass = 'play';
+  } else if (paused) {
+    playLabel = '▶ Resume'; playClass = 'play paused';
+  } else {
+    playLabel = '❚❚ Pause'; playClass = 'play';
+  }
 
   return (
     <header>
@@ -18,6 +28,19 @@ export default function Header({
         <button className="nudge ghost" onClick={onPlus}>+0.5s</button>
         <button className="ghost" onClick={onReset}>⟲ Reset</button>
         <button className="ghost" onClick={onToggleTimeline}>⤢ Timeline</button>
+        <button className="ghost" onClick={() => fileRef.current?.click()}>
+          {videoLoaded ? '⏏ Video' : '⏏ Load Video'}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="video/*"
+          hidden
+          onChange={e => {
+            const f = e.target.files[0];
+            if (f) { onLoadVideo(f); e.target.value = ''; }
+          }}
+        />
       </div>
       <label className="offset">
         Offset{' '}

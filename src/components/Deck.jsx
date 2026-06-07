@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { renderText } from '../parser.js';
 
-export default function Deck({ cues, vars, engState, onDone, onSetVar, onPhaseBtn, registerCard, unregisterCard }) {
+export default function Deck({ cues, vars, engState, doneDisabled, onDone, onSetVar, onPhaseBtn, registerCard, unregisterCard }) {
   return (
     <section className="deck" id="deck">
       {cues.map((cue, i) => (
@@ -11,6 +11,7 @@ export default function Deck({ cues, vars, engState, onDone, onSetVar, onPhaseBt
           cue={cue}
           vars={vars}
           engState={engState}
+          doneDisabled={doneDisabled}
           onDone={onDone}
           onSetVar={onSetVar}
           onPhaseBtn={onPhaseBtn}
@@ -22,7 +23,7 @@ export default function Deck({ cues, vars, engState, onDone, onSetVar, onPhaseBt
   );
 }
 
-function DeckCard({ i, cue, vars, engState, onDone, onSetVar, onPhaseBtn, registerCard, unregisterCard }) {
+function DeckCard({ i, cue, vars, engState, doneDisabled, onDone, onSetVar, onPhaseBtn, registerCard, unregisterCard }) {
   const slotRef = useRef(null);
   const cardRef = useRef(null);
   const cdRef = useRef(null);
@@ -89,7 +90,7 @@ function DeckCard({ i, cue, vars, engState, onDone, onSetVar, onPhaseBtn, regist
                   </div>
                 ))
               )}
-              <button className="done-btn" onClick={() => onDone(i)}>Done</button>
+              <button className="done-btn" onClick={() => onDone(i)} disabled={doneDisabled}>Done</button>
             </div>
           </div>
         </div>
