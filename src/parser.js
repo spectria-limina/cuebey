@@ -3,22 +3,34 @@ import { parseTime, num, fmtHMS, trimNum, esc } from './format.js';
 export const WARN_DEFAULT = 2;
 export const TOKEN = /{([a-zA-Z0-9_|]+)(?::([^}]*))?}/g;
 
+// Default timeline in TSV format (new column order)
 export const SEED_CSV =
-`time,standby,warn,remain,type,text,set,options
-0:00:00,,,,phase,— Pull · press Start —,,
-0:00:12,8,3,2,call,Tankbuster — tank cooldowns,,
-0:00:26,6,3,2,note,Grab the orb (top-left),,
-0:00:44,10,4,3,call,Boss winds up — store side & tether,cleave;tether,left|right;near|far
-0:01:04,6,3,2,call,"Cleave fires — move {cleave:left=right,right=left}",,
-0:01:12,5,3,2,call,"{tether} tether resolves",,
-0:01:18,6,3,8,call,"Go {cleave|tether:left|near=NE,left|far=SW,right|near=NW,right|far=SE,*=mid}",,
-0:01:22,,2,1,call,Quick adjust — bait north,,
-0:01:28,6,3,2,call,Stack middle,,
-0:01:46,,,,phase,— Phase 2 · press GO at transition —,,
-0:01:58,8,3,2,call,Spread for markers,,
-0:02:12,6,3,2,call,Towers — your spot,,
-0:02:26,8,4,3,call,"Knockback toward {cleave} wall",,
-0:02:54,10,4,4,call,Raidwide — heal to full,,`;
+`time\ttype\ttext\tstandby\tready\tremain\tvars\tflags
+0:00:00\tphase\t— Pull · press Start —\t\t\t\t\t
+0:00:12\tcall\tTankbuster — tank cooldowns\t8\t3\t2\t\t
+0:00:26\tnote\tGrab the orb (top-left)\t6\t3\t2\t\t
+0:00:44\tcall\tBoss winds up — store side & tether\t10\t4\t3\t{cleave:left,right};{tether:near,far}\t
+0:01:04\tcall\tCleave fires — move {cleave:left=right,right=left}\t6\t3\t2\t\t
+0:01:12\tcall\t{tether} tether resolves\t5\t3\t2\t\t
+0:01:18\tcall\tGo {cleave|tether:left|near=NE,left|far=SW,right|near=NW,right|far=SE,*=mid}\t6\t3\t8\t\t
+0:01:22\tcall\tQuick adjust — bait north\t\t2\t1\t\t
+0:01:28\tcall\tStack middle\t6\t3\t2\t\t
+0:01:46\tphase\t— Phase 2 · press GO at transition —\t\t\t\t\t
+0:01:58\tcall\tSpread for markers\t8\t3\t2\t\t
+0:02:12\tcall\tTowers — your spot\t6\t3\t2\t\t
+0:02:26\tcall\tKnockback toward {cleave} wall\t8\t4\t3\t\t
+0:02:54\tcall\tRaidwide — heal to full\t10\t4\t4\t\t`;
+
+// ── CSV parser (handles both CSV and TSV) ─────────────────────────────────────
+
+function parseTSV(text) {
+  const rows = [];
+  for (const line of text.split('\n')) {
+    if (line === '') continue;
+    rows.push(line.split('\t'));
+  }
+  return rows;
+}
 
 function parseCSVText(text) {
   const rows = [];
@@ -42,13 +54,79 @@ function parseCSVText(text) {
   return rows;
 }
 
-export function csvCell(v) {
-  v = String(v == null ? '' : v);
-  return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+function parseRows(text) {
+  // Detect TSV by checking if the first non-empty, non-comment line has a tab
+  const firstLine = text.split('\n').find(l => l.trim() && !l.trim().startsWith('#')) || '';
+  if (firstLine.includes('\t')) return parseTSV(text);
+  return parseCSVText(text);
 }
 
+// ── Cell escaping for TSV output ──────────────────────────────────────────────
+
+export function tsvCell(v) {
+  // TSV doesn't support tabs in values — replace with space as a safe fallback
+  return String(v == null ? '' : v).replace(/\t/g, ' ');
+}
+
+// Keep csvCell for any code still calling it (produces TSV-safe output too)
+export function csvCell(v) { return tsvCell(v); }
+
+// ── Variable set parsing ──────────────────────────────────────────────────────
+
+// Parse the unified `vars` column (or legacy `set`+`options` columns).
+// Syntax in vars column: {varname|Display Name:val=Label,val2=Label2,...}
+// Semicolon-separates multiple variable definitions.
+// Legacy set-only syntax: plain `varname` + pipe-separated options in optGroups.
+export function parseSetsFromRaw(rawSet, rawOpts) {
+  const entries = (rawSet || '').trim().split(';').map(x => x.trim()).filter(Boolean);
+  const optGroups = (rawOpts || '').split(';');
+  return entries.map((entry, k) => {
+    // Inline syntax: {varname|Optional Display Name:val=Label,...}
+    const m = entry.match(/^\{([a-zA-Z0-9_]+)(\|([^:}]+))?:([^}]*)\}$/);
+    if (m) {
+      const name = m[1];
+      const displayLabel = m[3] ? m[3].trim() : name;
+      const pairs = m[4].split(',').map(p => {
+        // Handle escaped comma within a value: \, → comma
+        const unescaped = p.replace(/\\,/g, '\x01');
+        const eq = unescaped.indexOf('=');
+        if (eq < 0) {
+          const v = unescaped.trim().replace(/\x01/g, ',');
+          return { value: v, label: v };
+        }
+        return {
+          value: unescaped.slice(0, eq).trim().replace(/\x01/g, ','),
+          label: unescaped.slice(eq + 1).trim().replace(/\x01/g, ','),
+        };
+      }).filter(p => p.value);
+      return { name, displayLabel, options: pairs.map(p => p.value), labels: pairs.map(p => p.label) };
+    }
+    // Legacy plain syntax: varname in set column, pipe/slash-separated options in options column
+    const opts = (optGroups[k] || '').split(/[|/]/).map(x => x.trim()).filter(Boolean);
+    return { name: entry, displayLabel: entry, options: opts, labels: opts };
+  });
+}
+
+// ── Flags parsing ─────────────────────────────────────────────────────────────
+
+function parseFlags(flagsStr) {
+  const flags = { disabled: false, syncPoint: false, castbarDuration: null };
+  if (!flagsStr) return flags;
+  for (const flag of flagsStr.split(',').map(f => f.trim()).filter(Boolean)) {
+    if (flag === 'disabled') flags.disabled = true;
+    else if (flag === 'sync') flags.syncPoint = true;
+    else if (flag.startsWith('castbar=')) {
+      const n = parseFloat(flag.slice(8));
+      if (!isNaN(n) && n > 0) flags.castbarDuration = n;
+    }
+  }
+  return flags;
+}
+
+// ── Build cues from text ──────────────────────────────────────────────────────
+
 export function buildCues(csvText, offsetSec) {
-  const rows = parseCSVText(csvText);
+  const rows = parseRows(csvText);
   const cues = [];
   const vars = {};
   const errs = [];
@@ -59,81 +137,144 @@ export function buildCues(csvText, offsetSec) {
     if (!header) {
       if (first.toLowerCase() === 'time') {
         header = r.map(x => x.trim().toLowerCase());
-        header.forEach((h, k) => (hi[h] = k));
+        header.forEach((h, k) => { hi[h] = k; });
         return;
       }
-      header = ['time', 'type', 'text', 'set', 'options'];
-      header.forEach((h, k) => (hi[h] = k));
+      // No header row: assume new column order
+      header = ['time', 'type', 'text', 'standby', 'ready', 'remain', 'vars', 'flags'];
+      header.forEach((h, k) => { hi[h] = k; });
     }
     if (!r.length || r.every(x => x.trim() === '')) return;
     if (first.startsWith('#')) return;
-    const cell = name => (hi[name] != null ? r[hi[name]] || '' : '');
+
+    const cell = name => (hi[name] != null ? (r[hi[name]] || '') : '');
     const t = parseTime(cell('time').trim());
     if (t === null) { errs.push(ri + 1); return; }
-    let type = cell('type').trim().toLowerCase();
-    if (type === 'me' || type === 'self' || type === 'reminder') type = 'note';
-    if (type === 'sync') type = 'phase';
-    if (type !== 'note' && type !== 'phase') type = 'call';
+
+    // Type: accept new names (event, cast) and map legacy names
+    let rawType = cell('type').trim().toLowerCase();
+    let isSyncLegacy = false;
+    if (rawType === 'me' || rawType === 'self' || rawType === 'reminder') rawType = 'note';
+    if (rawType === 'sync') { rawType = 'event'; isSyncLegacy = true; }
+    if (!['call', 'note', 'phase', 'event', 'cast'].includes(rawType)) rawType = 'call';
+
     const text = cell('text').trim();
-    const names = cell('set').trim().split(';').map(x => x.trim()).filter(Boolean);
-    const groups = cell('options').split(';').map(g => g.split(/[|/]/).map(x => x.trim()).filter(Boolean));
-    const sets = names.map((nm, k) => ({ name: nm, options: groups[k] || [] }));
+
+    // Accept `ready` or `warn` column for the warn/ready duration
+    const warnRaw = cell('ready') || cell('warn');
+
+    // Variable sets: prefer `vars` column, fall back to legacy `set`+`options`
+    const varsCell = cell('vars').trim() || cell('set').trim();
+    const optsCell = cell('options').trim();
+    const sets = parseSetsFromRaw(varsCell, optsCell);
+
+    // Flags
+    const flags = parseFlags(cell('flags').trim());
+    if (isSyncLegacy) flags.syncPoint = true;
+
     cues.push({
       raw: t,
       effTime: t - offsetSec,
-      type,
+      type: rawType,
       text,
       standby: num(cell('standby')),
-      warn: num(cell('warn')),
+      warn: num(warnRaw),
       remain: num(cell('remain')),
       sets,
       skipped: false,
+      disabled: flags.disabled,
+      syncPoint: flags.syncPoint,
+      castbarDuration: flags.castbarDuration,
       _tok: /{[a-zA-Z0-9_|]/.test(text),
+      varRefs: [], // populated below after all cues are built
     });
   });
 
-  cues.sort((a, b) => a.effTime - b.effTime);
-
   function ensure(n) {
-    return vars[n] || (vars[n] = { name: n, options: [], value: null, first: Infinity, last: -Infinity, defIdx: -1, lastIdx: -1 });
+    return vars[n] || (vars[n] = {
+      name: n, label: n,
+      options: [], labels: [], value: null,
+      first: Infinity, last: -Infinity, defIdx: -1, lastIdx: -1,
+    });
   }
+
   cues.forEach((c, i) => {
+    const refSet = new Set();
     const ref = nm => {
       const v = ensure(nm);
       if (c.effTime < v.first) v.first = c.effTime;
       if (c.effTime > v.last || v.lastIdx < 0) { v.last = c.effTime; v.lastIdx = i; }
+      refSet.add(nm);
     };
     c.sets.forEach(s => {
       const v = ensure(s.name);
-      if (!v.options.length && s.options.length) v.options = s.options.slice();
+      if (!v.options.length && s.options.length) {
+        v.options = s.options.slice();
+        v.labels = (s.labels || s.options).slice();
+      }
+      // Propagate display label from first definition that has one
+      if (s.displayLabel && s.displayLabel !== s.name && v.label === v.name) {
+        v.label = s.displayLabel;
+      }
       if (v.defIdx < 0) v.defIdx = i;
       ref(s.name);
     });
     let m;
     TOKEN.lastIndex = 0;
     while ((m = TOKEN.exec(c.text))) m[1].split('|').map(x => x.trim()).filter(Boolean).forEach(ref);
+    c.varRefs = [...refSet];
   });
 
   return { cues, vars, errs };
 }
 
+// ── Serializer ────────────────────────────────────────────────────────────────
+
+export function serializeVarsField(sets) {
+  if (!sets || !sets.length) return '';
+  return sets.map(s => {
+    const hasDisplayLabel = s.displayLabel && s.displayLabel !== s.name;
+    const hasCustomLabels = s.labels && s.labels.some((l, j) => l !== s.options[j]);
+    const nameStr = hasDisplayLabel ? `${s.name}|${s.displayLabel}` : s.name;
+    if (hasCustomLabels) {
+      const inner = s.options.map((v, j) => {
+        const l = s.labels[j];
+        return (l === v) ? v : `${v}=${l}`;
+      }).join(',');
+      return `{${nameStr}:${inner}}`;
+    }
+    return `{${nameStr}:${s.options.join(',')}}`;
+  }).join(';');
+}
+
+function serializeFlagsField(c) {
+  const flags = [];
+  if (c.disabled) flags.push('disabled');
+  if (c.syncPoint) flags.push('sync');
+  if (c.castbarDuration != null) flags.push('castbar=' + trimNum(c.castbarDuration));
+  return flags.join(',');
+}
+
 export function serializeCSV(cues) {
-  let out = 'time,standby,warn,remain,type,text,set,options\n';
+  const cols = ['time', 'type', 'text', 'standby', 'ready', 'remain', 'vars', 'flags'];
+  let out = cols.join('\t') + '\n';
   cues.forEach(c => {
-    const setStr = c.sets.map(s => s.name).join(';');
-    const optStr = c.sets.map(s => s.options.join('|')).join(';');
     const n = v => (v == null ? '' : trimNum(v));
     out += [
-      csvCell(fmtHMS(c.raw)),
-      n(c.standby), n(c.warn), n(c.remain),
-      csvCell(c.type === 'call' ? '' : c.type),
-      csvCell(c.text),
-      csvCell(setStr),
-      csvCell(optStr),
-    ].join(',') + '\n';
+      tsvCell(fmtHMS(c.raw)),
+      tsvCell(c.type),
+      tsvCell(c.text),
+      n(c.standby),
+      n(c.warn),
+      n(c.remain),
+      tsvCell(serializeVarsField(c.sets)),
+      tsvCell(serializeFlagsField(c)),
+    ].join('\t') + '\n';
   });
   return out;
 }
+
+// ── Token renderer ────────────────────────────────────────────────────────────
 
 export function resolveToken(namesStr, mapStr, vars) {
   const names = namesStr.split('|').map(s => s.trim()).filter(Boolean);

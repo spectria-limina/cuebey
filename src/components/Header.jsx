@@ -1,14 +1,28 @@
 import { useRef } from 'react';
 
+const HELP_ROWS = [
+  ['Space',   'Play / Pause'],
+  ['Enter',   'GO (release phase hold) / Start'],
+  ['R',       'Reset to beginning'],
+  ['E',       'Toggle timeline editor'],
+  ['L',       'Toggle lock mode'],
+  ['← / →',  'Nudge clock ±0.5 s'],
+  ['1 – 9',   'Set the Nth variable option on the current active card'],
+];
+
 export default function Header({
   engState, videoLoaded, videoSynced, offsetText, onOffsetChange, clockRef,
-  onPlay, onMinus, onPlus, onReset, onToggleTimeline, onLoadVideo,
+  onPlay, onGo, onMinus, onPlus, onReset, onToggleTimeline,
+  hideDone, onToggleHideDone,
+  locked, onToggleLock,
+  showHelp, onToggleHelp,
 }) {
-  const fileRef = useRef(null);
   const { started, paused, phaseHold } = engState;
 
   let playLabel, playClass;
-  if (!started && !videoSynced) {
+  if (phaseHold) {
+    playLabel = 'GO ▸'; playClass = 'play go';
+  } else if (!started && !videoSynced) {
     playLabel = '▶ Start'; playClass = 'play';
   } else if (paused) {
     playLabel = '▶ Resume'; playClass = 'play paused';
@@ -22,35 +36,58 @@ export default function Header({
         <b>Cuebey</b>
         <span>timeline cue console</span>
       </div>
+
       <div className="transport">
-        <button className={playClass} onClick={onPlay}>{playLabel}</button>
         <button className="nudge ghost" onClick={onMinus}>−0.5s</button>
+        <button className={playClass} onClick={phaseHold ? onGo : onPlay}>{playLabel}</button>
         <button className="nudge ghost" onClick={onPlus}>+0.5s</button>
+        <div className="clock" ref={clockRef}>0:00.0</div>
         <button className="ghost" onClick={onReset}>⟲ Reset</button>
-        <button className="ghost" onClick={onToggleTimeline}>⤢ Timeline</button>
-        <button className="ghost" onClick={() => fileRef.current?.click()}>
-          {videoLoaded ? '⏏ Video' : '⏏ Load Video'}
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="video/*"
-          hidden
-          onChange={e => {
-            const f = e.target.files[0];
-            if (f) { onLoadVideo(f); e.target.value = ''; }
-          }}
-        />
       </div>
-      <label className="offset">
-        Offset{' '}
-        <input
-          value={offsetText}
-          onChange={e => onOffsetChange(e.target.value)}
-          spellCheck={false}
-        />
-      </label>
-      <div className="clock" ref={clockRef}>0:00.0</div>
+
+      <div className="header-controls">
+        <label className="offset">
+          Offset{' '}
+          <input
+            value={offsetText}
+            onChange={e => onOffsetChange(e.target.value)}
+            spellCheck={false}
+          />
+        </label>
+        <button className="ghost" onClick={onToggleTimeline}>⤢ Timeline</button>
+        <label className="toggle">
+          <input type="checkbox" checked={hideDone} onChange={onToggleHideDone} />
+          <span className="toggle-slider" />
+          <span className="toggle-label">Hide Done</span>
+        </label>
+        <button
+          className={'lock-btn ghost' + (locked ? ' locked' : '')}
+          onClick={onToggleLock}
+          title={locked ? 'Unlock editing (L)' : 'Lock editing (L)'}
+        >
+          {locked ? '🔒 Locked' : '🔓 Lock'}
+        </button>
+        <button className="ghost help-btn" onClick={onToggleHelp} title="Keyboard shortcuts">?</button>
+      </div>
+
+      {showHelp && (
+        <div className="help-popup" onClick={onToggleHelp}>
+          <div className="help-popup-inner" onClick={e => e.stopPropagation()}>
+            <div className="help-popup-title">Keyboard Shortcuts</div>
+            <table>
+              <tbody>
+                {HELP_ROWS.map(([key, desc]) => (
+                  <tr key={key}>
+                    <td><kbd>{key}</kbd></td>
+                    <td>{desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button className="ghost" onClick={onToggleHelp}>Close</button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
