@@ -523,7 +523,9 @@ export default function App() {
     if (e.videoSynced && v) {
       const vt = getVideoFromTimeline(t);
       if (vt != null) v.currentTime = Math.max(0, vt);
-    } else if (!e.started || e.paused || e.phaseHold) {
+    } else if (!e.started) {
+      setEditorClock(t);
+    } else if (e.paused || e.phaseHold) {
       e.frozenClock = t;
       e.prevClock = t;
       paintFrame(t);
