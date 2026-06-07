@@ -262,9 +262,9 @@ main.solo .resize-handle-left { display: none; }
 .re-ops button { font-size: 11px; padding: 4px 10px; }
 .re-del { color: #ff7a72 !important; }
 .re-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); min-width: 52px; flex: none; }
-.re-inp { font-family: var(--mono); font-size: 12.5px; background: #0c0e13; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; width: 88px; }
-.re-txt { font-size: 13px; background: #0c0e13; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px; flex: 1; min-width: 120px; }
-.re-textarea { font-size: 13px; font-family: var(--noto) !important; background: #0c0e13; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px; flex: 1; min-width: 120px; resize: none; min-height: 42px; field-sizing: content; }
+.re-inp { font-family: var(--mono); font-size: 12.5px; background: #141824; color: var(--ink); border: 1px solid #2d3448; border-radius: 5px; padding: 4px 7px; width: 88px; }
+.re-txt { font-size: 13px; background: #141824; color: var(--ink); border: 1px solid #2d3448; border-radius: 5px; padding: 5px 8px; flex: 1; min-width: 120px; }
+.re-textarea { font-size: 13px; font-family: var(--noto) !important; background: #141824; color: var(--ink); border: 1px solid #2d3448; border-radius: 5px; padding: 5px 8px; flex: 1; min-width: 120px; resize: none; min-height: 42px; field-sizing: content; }
 .re-mono { font-family: var(--mono) !important; font-size: 12.5px !important; }
 .re-sel { font-family: var(--sans); font-size: 12px; background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; cursor: pointer; }
 .re-inp:focus, .re-txt:focus, .re-textarea:focus { border-color: #3a4150; outline: none; }
