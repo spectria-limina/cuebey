@@ -404,14 +404,20 @@ main.solo .resize-handle-left { display: none; }
 .sync-btn { font-size: 11px; padding: 5px 10px; color: var(--blue) !important; border-color: rgba(86,168,232,.3) !important; }
 .sync-btn:hover { border-color: var(--blue) !important; }
 
-/* Set-time buttons on event/cast cards */
-.settime-btns { display: flex; gap: 3px; flex-wrap: wrap; }
+/* Set-time buttons on cards */
+.settime-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 .settime-btn {
-  font-family: var(--mono); font-size: 9.5px; padding: 3px 7px;
-  letter-spacing: .04em; color: var(--green) !important;
-  border-color: rgba(51,178,119,.3) !important; background: transparent;
+  font-family: var(--mono); font-size: 9.5px; padding: 3px 5px;
+  letter-spacing: .04em; background: transparent;
 }
-.settime-btn:hover { border-color: var(--green) !important; }
+.settime-now { color: var(--green) !important; border-color: rgba(51,178,119,.3) !important; }
+.settime-now:hover { border-color: var(--green) !important; }
+.settime-ready { color: var(--amber) !important; border-color: rgba(200,168,74,.3) !important; }
+.settime-ready:hover { border-color: var(--amber) !important; }
+.settime-standby { color: var(--blue) !important; border-color: rgba(86,168,232,.3) !important; }
+.settime-standby:hover { border-color: var(--blue) !important; }
+.settime-remain { color: var(--orange) !important; border-color: rgba(255,157,51,.3) !important; }
+.settime-remain:hover { border-color: var(--orange) !important; }
 
 /* ── Card type base styles ── */
 .card.note { padding: 7px 22px 11px; border-left: 4px solid #343943; }

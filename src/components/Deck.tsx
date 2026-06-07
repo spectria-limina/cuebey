@@ -164,29 +164,27 @@ function DeckCard({
                     </div>
                   ))}
                   {(isEvent || isCast) && (
-                    <>
-                      <button className="sync-btn" onClick={() => onSyncEntry(i)}>⊕ Sync</button>
-                      {!locked && (
-                        <div className="settime-btns">
-                          <button className="settime-btn" title="Set cue time to now" onClick={() => {
-                            const t = getCurrentTime();
-                            onEditCue(i, { rawTime: fmtHMS(Math.max(0, t + offsetSec)) });
-                          }}>↓ Now</button>
-                          <button className="settime-btn" title="Set ready window to start now" onClick={() => {
-                            const t = getCurrentTime();
-                            onEditCue(i, { warn: Math.max(0, cue.effTime - t) });
-                          }}>↓ Ready</button>
-                          <button className="settime-btn" title="Set standby to start now" onClick={() => {
-                            const t = getCurrentTime();
-                            onEditCue(i, { standby: Math.max(0, cue.effTime - t) });
-                          }}>↓ Standby</button>
-                          <button className="settime-btn" title="Set remain to elapsed since cue" onClick={() => {
-                            const t = getCurrentTime();
-                            onEditCue(i, { remain: Math.max(0, t - cue.effTime) });
-                          }}>↓ Remain</button>
-                        </div>
-                      )}
-                    </>
+                    <button className="sync-btn" onClick={() => onSyncEntry(i)}>⊕ Sync</button>
+                  )}
+                  {!locked && (
+                    <div className="settime-btns">
+                      <button className="settime-btn settime-now" title="Set cue time to now" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { rawTime: fmtHMS(Math.max(0, t + offsetSec)) });
+                      }}>↓ Now</button>
+                      <button className="settime-btn settime-ready" title="Set ready window to start now" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { warn: Math.max(0, cue.effTime - t) });
+                      }}>↓ Ready</button>
+                      <button className="settime-btn settime-standby" title="Set standby to start now" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { standby: Math.max(0, cue.effTime - t) });
+                      }}>↓ Standby</button>
+                      <button className="settime-btn settime-remain" title="Set remain to elapsed since cue" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { remain: Math.max(0, t - cue.effTime) });
+                      }}>↓ Remain</button>
+                    </div>
                   )}
                   {cue.disabled ? (
                     <button
