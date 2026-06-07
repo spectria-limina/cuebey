@@ -1,6 +1,6 @@
 :root {
   --bg: #0a0b0e; --panel: #111319; --panel-2: #161922; --line: #262a33; --line-soft: #1b1f27;
-  --ink: #e9ebf1; --ink-dim: #8b91a0; --ink-faint: #565c6a; --note: #6b7079;
+  --ink: #e9ebf1; --ink-dim: #8b91a0; --ink-faint: #565c6a; --note: #858991;
   --amber: #c8a84a; --amber-dim: rgba(200,168,74,0.45);
   --orange: #ff9d33; --green: #33b277; --blue: #56a8e8; --yellow: #bebe52;
   --vgray: #498ade; --vio: #9b8cff; --vio-deep: #1a1736;
@@ -158,7 +158,7 @@ main.solo .resize-handle-left { display: none; }
 .source-col-header:first-child { padding-left: 0; }
 .source-col-header:last-child { border-right: none; }
 .source-col-header:hover { color: var(--ink-dim); }
-.editor textarea {
+.source-editor {
   flex: 1; min-height: 120px; resize: none; border: 0; outline: 0;
   background: transparent; color: var(--ink); padding: 8px 14px;
   font-family: var(--mono); font-size: 12.5px; line-height: 1.75; tab-size: 4;
