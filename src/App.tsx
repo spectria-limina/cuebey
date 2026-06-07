@@ -743,7 +743,7 @@ export default function App() {
 
     // Note cards with sets: retire immediately when all set variables are filled
     // (this can fire at any time stage — the user has answered so the card can go)
-    if (c.sets.length > 0) {
+    if (c.type === 'note' && c.sets.length > 0) {
       const allFilled = c.sets.every(s => varsRef.current[s.name]?.value != null);
       if (allFilled) return 'retired';
     }
@@ -754,18 +754,31 @@ export default function App() {
       if (varNames.length > 0) {
         const anyUnset = varNames.some(nm => varsRef.current[nm]?.value == null);
         if (anyUnset) {
+          // Compute the linger deadline from the last non-disabled cue referencing
+          // any of our variables. Track whether we found at least one registered var.
           let maxLastRetire = -Infinity;
+          let foundAnyVar = false;
           for (const nm of varNames) {
             const v = varsRef.current[nm];
-            if (v && v.lastIdx >= 0) {
-              const lastCue = cuesRef.current[v.lastIdx];
-              if (lastCue) {
+            if (!v) continue;
+            foundAnyVar = true;
+            // Walk backwards from lastIdx to find the last non-disabled cue
+            // that references this variable.
+            let idx = v.lastIdx;
+            while (idx >= 0) {
+              const lastCue = cuesRef.current[idx];
+              if (lastCue && !lastCue.disabled && lastCue.varRefs?.includes(nm)) {
                 maxLastRetire = Math.max(maxLastRetire,
                   lastCue.effTime + (lastCue.remain ?? REMAIN_DEFAULT) + VAR_LINGER);
+                break;
               }
+              idx--;
             }
           }
-          if (maxLastRetire !== -Infinity && clock <= maxLastRetire) return 'pending';
+          // If we found at least one registered variable and the linger window is
+          // still open, stay pending. If foundAnyVar but all referencing cues are
+          // disabled (maxLastRetire still -Infinity), retire immediately.
+          if (foundAnyVar && maxLastRetire !== -Infinity && clock <= maxLastRetire) return 'pending';
         }
       }
       return 'retired';
