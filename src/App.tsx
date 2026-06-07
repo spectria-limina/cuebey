@@ -1040,7 +1040,6 @@ export default function App() {
     const e = eng.current;
     if (e.started && !e.paused && !e.phaseHold) return;
     setActiveTab('rendered');
-    focusRowRef.current?.(i);
     handleSelect(i);
     requestAnimationFrame(() => requestAnimationFrame(() => {
       renderRowRefs.current[i]?.row?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
