@@ -13,7 +13,7 @@ const HELP_ROWS: [string, string][] = [
   ['1 – 9',   'Set the Nth variable option on the current active card'],
 ];
 
-const SPEED_OPTIONS = [0.25, 0.5, 1, 1.5, 2];
+const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 interface HeaderProps {
   engState: EngStateSnapshot;
