@@ -419,44 +419,62 @@ main.solo .resize-handle-left { display: none; }
 .card.phase .card-text { color: var(--blue); font-family: var(--cond); letter-spacing: .03em; }
 
 /* ── Card states ── */
-.card.is-standby { border-color: var(--blue); }
-.card.is-standby:not(.note):not(.event):not(.cast) { background: radial-gradient(120% 140% at 50% 0%, #0e2230, #0c1218); }
-.card.is-standby:not(.note) .card-state { color: var(--blue); }
 
-/* Ready state — amber, calm (was warn/orange) */
-.card.is-ready { border-color: var(--amber); }
-.card.is-ready:not(.note):not(.event):not(.cast) { background: radial-gradient(120% 140% at 50% 0%, #1d1a0e, #111008); }
+/* Standby — calls get blue bg tint, others just a faint border */
+.card.is-standby:not(.note):not(.event):not(.cast) { border-color: var(--blue); background: radial-gradient(120% 140% at 50% 0%, #0e2230, #0c1218); }
+.card.is-standby:not(.note):not(.event):not(.cast) .card-state { color: var(--blue); }
+.card.note.is-standby { border-color: rgba(86,168,232,.35); }
+.card.event.is-standby { border-color: rgba(86,168,232,.2); }
+.card.cast.is-standby { border-color: rgba(86,168,232,.2); }
+
+/* Ready state — less prominent than NOW
+   Calls: amber border + subtle amber bg + amber cd/state label
+   Notes: amber border only, violet text unchanged, no bg change
+   Events/Casts: muted amber border, slight opacity boost, nothing else */
+.card.is-ready:not(.note):not(.event):not(.cast) {
+  border-color: var(--amber);
+  background: radial-gradient(120% 140% at 50% 0%, #1d1a0e, #111008);
+}
 .card.is-ready:not(.note):not(.event):not(.cast) .cd { color: var(--amber); }
 .card.is-ready:not(.note):not(.event):not(.cast) .card-state { color: var(--amber); opacity: 0.7; }
-/* Event ready — amber treatment, more prominent than base (no castbar to show progress) */
-.card.event.is-ready {
-  border-color: var(--amber); opacity: 1;
-  background: radial-gradient(120% 140% at 50% 0%, #1a1609, #0e0c07);
+
+/* Note ready — amber border only, no bg or text color change */
+.card.note.is-ready { border-color: var(--amber); }
+
+/* Event/Cast ready — barely-visible amber border, slight opacity lift, no bg */
+.card.event.is-ready { border-color: rgba(200,168,74,.45); opacity: 0.88; }
+.card.cast.is-ready { border-color: rgba(200,168,74,.45); opacity: 0.9; }
+
+/* Entry flash for calls entering ready — softer than the old readyFlash, and less than nowGlow */
+@keyframes readyEntry {
+  0%   { box-shadow: 0 0 0 2px rgba(200,168,74,0.4), 0 0 8px rgba(200,168,74,0.15); }
+  100% { box-shadow: none; }
 }
-.card.event.is-ready .cd { color: var(--amber); }
-.card.event.is-ready .card-state { color: var(--amber); opacity: 0.65; }
+.card.is-ready.just-entered:not(.note):not(.event):not(.cast) { animation: readyEntry 0.5s ease-out forwards; }
 
-/* Cast ready — amber border, castbar provides the countdown animation */
-.card.cast.is-ready { border-color: var(--amber); opacity: 1; }
-.card.cast.is-ready .cd { color: var(--amber); }
-.card.cast.is-ready .card-state { color: var(--amber); opacity: 0.65; }
-/* Note ready — keep violet */
-.card.note.is-ready { border-color: var(--vio); }
-
-/* Attention flash when entering ready state (applied transiently via JS) */
-@keyframes readyFlash {
-  0%   { box-shadow: 0 0 0 4px rgba(220,190,80,0.65), 0 0 14px rgba(220,190,80,0.3); border-color: #e8c860; }
-  100% { box-shadow: 0 0 0 0 rgba(220,190,80,0); border-color: var(--amber); }
+/* NOW state — most prominent; calls pulse with a green glow */
+@keyframes nowGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(51,178,119,0.2), 0 0 12px rgba(51,178,119,0.08); }
+  50%       { box-shadow: 0 0 0 3px rgba(51,178,119,0.3), 0 0 24px rgba(51,178,119,0.18); }
 }
-.card.is-ready.just-entered { animation: readyFlash 0.65s ease-out forwards; }
-.card.note.is-ready.just-entered { animation: none; } /* Notes don't flash */
 
-/* Now state */
-.card.is-now { border-color: var(--green); }
-.card.is-now:not(.note):not(.event):not(.cast) { background: radial-gradient(120% 140% at 50% 0%, #0d2c1d, #0c1712); }
+/* Call NOW — bright green bg + pulsing glow + green text */
+.card.is-now:not(.note):not(.event):not(.cast) {
+  border-color: var(--green);
+  background: radial-gradient(120% 140% at 50% 0%, #0d2c1d, #0c1712);
+  box-shadow: 0 0 0 1px rgba(51,178,119,0.3), 0 0 20px rgba(51,178,119,0.15);
+  animation: nowGlow 2s ease-in-out infinite;
+}
 .card.is-now:not(.note):not(.event):not(.cast) .card-text,
 .card.is-now:not(.note):not(.event):not(.cast) .cd { color: var(--green); }
 .card.is-now:not(.note):not(.event):not(.cast) .card-state { color: var(--green); }
+
+/* Note NOW — green border, note text color unchanged, no bg or glow */
+.card.note.is-now { border-color: var(--green); }
+
+/* Event/Cast NOW — muted green border only, stays subdued */
+.card.event.is-now { border-color: rgba(51,178,119,0.5); opacity: 0.85; }
+.card.cast.is-now { border-color: rgba(51,178,119,0.5); opacity: 0.85; }
 
 /* Pending state — note cards waiting for variable resolution */
 .card.is-pending { border-color: var(--vio); }
