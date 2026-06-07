@@ -22,6 +22,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('source');
   const [showTimeline, setShowTimeline] = useState<boolean>(true);
   const [locked, setLocked] = useState<boolean>(false);
+  const [leftWidth, setLeftWidth] = useState<number>(360);
+  const [rightWidth, setRightWidth] = useState<number>(300);
 
   const [cues, setCues] = useState<Cue[]>([]);
   const [vars, setVars] = useState<VarsRecord>({});
@@ -1080,6 +1082,37 @@ export default function App() {
 
   const doneDisabled = videoSynced && engState.started && !engState.paused && !engState.phaseHold;
 
+  // ── Resize handlers ───────────────────────────────────────────────────────
+  function startResizeLeft(e: React.MouseEvent): void {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = leftWidth;
+    const onMove = (ev: MouseEvent) => {
+      setLeftWidth(Math.max(200, Math.min(600, startWidth + ev.clientX - startX)));
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  function startResizeRight(e: React.MouseEvent): void {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = rightWidth;
+    const onMove = (ev: MouseEvent) => {
+      setRightWidth(Math.max(180, Math.min(500, startWidth - (ev.clientX - startX))));
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="app">
@@ -1107,7 +1140,12 @@ export default function App() {
         onSpeedChange={setVideoRate}
         onClockSeek={seekToTime}
       />
-      <main className={showTimeline ? '' : 'solo'}>
+      <main
+        className={showTimeline ? '' : 'solo'}
+        style={{ gridTemplateColumns: showTimeline
+          ? `${leftWidth}px 6px 1fr 6px ${rightWidth}px`
+          : `0 0 1fr 6px ${rightWidth}px` }}
+      >
         <Timeline
           csvText={csvText}
           onCsvChange={setCsvText}
@@ -1135,6 +1173,7 @@ export default function App() {
           focusRowRef={focusRowRef}
           locked={locked}
         />
+        <div className="resize-handle resize-handle-left" onMouseDown={startResizeLeft} />
         <div className="center-col">
           <VideoPanel
             videoRef={videoRef}
@@ -1167,6 +1206,7 @@ export default function App() {
             locked={locked}
           />
         </div>
+        <div className="resize-handle resize-handle-right" onMouseDown={startResizeRight} />
         <Variables
           vars={vars}
           conflicts={varConflicts}

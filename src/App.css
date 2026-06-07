@@ -114,9 +114,18 @@ button.help-btn { font-size: 14px; padding: 5px 10px; border-radius: 50%; min-wi
 
 .header-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 
-main { display: grid; grid-template-columns: 360px 1fr 300px; flex: 1; min-height: 0; }
-main.solo { grid-template-columns: 1fr 300px; }
+main { display: grid; flex: 1; min-height: 0; }
 main.solo .editor { display: none; }
+main.solo .resize-handle-left { display: none; }
+
+.resize-handle {
+  cursor: col-resize; background: transparent; position: relative; z-index: 10;
+}
+.resize-handle::after {
+  content: ''; position: absolute; inset: 0;
+  background: transparent; transition: background .15s;
+}
+.resize-handle:hover::after { background: rgba(86,168,232,.22); }
 
 /* ── Left: Timeline/editor panel ── */
 .editor { border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
@@ -482,10 +491,11 @@ main.solo .editor { display: none; }
 .vcard.is-set .cur { color: var(--green); }
 
 @media (max-width: 1000px) {
-  main { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  main { grid-template-columns: 1fr !important; grid-template-rows: auto 1fr auto; }
   .editor { border-right: 0; border-bottom: 1px solid var(--line); max-height: 34vh; }
   .vars { border-left: 0; border-top: 1px solid var(--line); max-height: 30vh; }
-  main.solo { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  main.solo { grid-template-columns: 1fr !important; grid-template-rows: 1fr auto; }
+  .resize-handle { display: none; }
   .card-body { flex-direction: column; align-items: center; text-align: center; }
   .card-btns { justify-content: center; }
 }
