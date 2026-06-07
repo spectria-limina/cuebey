@@ -897,7 +897,7 @@ export default function App() {
 
       // Skip/Restore button
       if (d.doneBtn && c.type !== 'phase') {
-        const showRestore = !e.started && st === 'retired';
+        const showRestore = st === 'retired';
         const dis = e.started && e.videoSynced && !e.paused && !e.phaseHold;
         const newText = showRestore ? '↺' : '▼▼';
         const newCls = showRestore ? 'restore-btn' : 'skip-btn';
