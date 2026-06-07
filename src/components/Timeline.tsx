@@ -161,10 +161,12 @@ export default function Timeline({
       </div>
 
       <div className={'pane' + (activeTab === 'source' ? ' on' : '')}>
-        <div className="source-col-headers" ref={colHeaderRef}>
-          {COL_HEADERS.map(h => (
-            <span key={h} className="source-col-header">{h}</span>
-          ))}
+        <div className="source-header">
+          <div className="source-col-headers" ref={colHeaderRef}>
+            {COL_HEADERS.map(h => (
+              <span key={h} className="source-col-header">{h}</span>
+            ))}
+          </div>
         </div>
         <textarea
           ref={textareaRef}
@@ -184,8 +186,10 @@ export default function Timeline({
               const ta = e.target as HTMLTextAreaElement;
               const start = ta.selectionStart, end = ta.selectionEnd;
               const next = ta.value.slice(0, start) + '\t' + ta.value.slice(end);
+              // Mutate DOM first so React won't reset the cursor on re-render
+              ta.value = next;
+              ta.selectionStart = ta.selectionEnd = start + 1;
               onCsvChange(next);
-              requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 1; });
             }
           }}
         />

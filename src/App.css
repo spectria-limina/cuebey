@@ -130,13 +130,15 @@ main.solo .editor { display: none; }
 .source-col-headers {
   display: flex; gap: 0; padding: 4px 14px; overflow: hidden; overflow-x: scroll; scrollbar-width: none;
   font-family: var(--mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
-  color: var(--ink-faint); white-space: pre; flex: 1;
+  color: var(--ink-faint); white-space: pre; flex-shrink: 0;
 }
 .source-col-headers::-webkit-scrollbar { display: none; }
 .source-col-header {
-  cursor: default; padding: 0 8px 0 0; flex-shrink: 0;
+  cursor: default; padding: 0 8px; flex-shrink: 0;
+  border-right: 1px solid var(--line-soft);
 }
 .source-col-header:first-child { padding-left: 0; }
+.source-col-header:last-child { border-right: none; }
 .source-col-header:hover { color: var(--ink-dim); }
 .editor textarea {
   flex: 1; min-height: 120px; resize: none; border: 0; outline: 0;
