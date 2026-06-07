@@ -216,6 +216,9 @@ export default function Timeline({
       <div className={'pane' + (activeTab === 'rendered' ? ' on' : '')}>
         <div className="rlist-head">
           <div className="editor-clock" ref={editorClockDisplayRef}>0:00.0</div>
+          {expandedSet.size > 0 && (
+            <span className="open-count">{expandedSet.size} open · Shift+click to add</span>
+          )}
           <button className="ghost rlist-close-all" onClick={() => setExpandedSet(new Set())}>Close All</button>
         </div>
         <div className="rlist" ref={rlistRef}>
@@ -298,11 +301,11 @@ function RenderedRow({
   }, [expanded]);
 
   const typeClass = cue.type === 'note' ? ' t-note' : cue.type === 'phase' ? ' t-phase' :
-    cue.type === 'event' ? ' t-event' : cue.type === 'cast' ? ' t-cast' : '';
+    cue.type === 'event' ? ' t-event' : cue.type === 'cast' ? ' t-cast' : ' t-call';
 
   return (
     <div
-      className={'rrow-wrap' + typeClass + (isDragOver ? ' drag-over' : '')}
+      className={'rrow-wrap' + typeClass + (isDragOver ? ' drag-over' : '') + (expanded ? ' expanded' : '')}
       onDragOver={e => { e.preventDefault(); onDragOver?.(i); }}
       onDrop={e => { e.preventDefault(); onDrop?.(i); }}
     >
@@ -320,7 +323,7 @@ function RenderedRow({
         <span className="rrow-drag">⠿</span>
         <div className="rt">{fmtClean(cue.effTime)}</div>
         <div className="rc" dangerouslySetInnerHTML={{ __html: renderText(cue.text, vars) }} />
-        <div className="row-pills">
+        <div className="rpills">
           {cue.standby != null && (
             <span className="rpill sb" title={'Standby at ' + fmtClean(cue.effTime - cue.standby)}>
               {trimNum(cue.standby)}s
@@ -337,7 +340,6 @@ function RenderedRow({
             </span>
           )}
         </div>
-        {cue.type !== 'call' && <div className="rtag">{cue.type.toUpperCase()}</div>}
         {cue.disabled && <div className="rtag rtag-off">OFF</div>}
         {cue.sets.length > 0 && (
           <div className="rvtag">set {cue.sets.map(s => s.displayLabel || s.name).join(', ')}</div>
@@ -347,19 +349,21 @@ function RenderedRow({
           title="Edit row"
           onClick={e => { e.stopPropagation(); onToggle(e.shiftKey); }}
         >
-          {expanded ? '▾' : '▸'}
+          {expanded ? '▾' : '✎'}
         </button>
       </div>
       {expanded && onEditCue && (
-        <RowEditor
-          i={i}
-          cue={cue}
-          offsetSec={offsetSec}
-          getCurrentTime={getCurrentTime}
-          onEditCue={onEditCue}
-          onDeleteCue={onDeleteCue}
-          onAddCue={onAddCue}
-        />
+        <div className={`re-wrap t-${cue.type}`}>
+          <RowEditor
+            i={i}
+            cue={cue}
+            offsetSec={offsetSec}
+            getCurrentTime={getCurrentTime}
+            onEditCue={onEditCue}
+            onDeleteCue={onDeleteCue}
+            onAddCue={onAddCue}
+          />
+        </div>
       )}
       {expanded && !onEditCue && (
         <div className="re-panel re-locked">
@@ -467,12 +471,8 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
 
   return (
     <div className="re-panel">
-      {/* Row operations */}
-      <div className="re-row re-ops">
-        <button className="ghost" onClick={() => onAddCue?.(i, false)}>+ Add ↑</button>
-        <button className="ghost re-del" onClick={() => onDeleteCue?.(i)}>✕ Delete</button>
-        <button className="ghost" onClick={() => onAddCue?.(i, true)}>+ Add ↓</button>
-      </div>
+      {/* Editing header */}
+      <div className="re-header">Editing · {fmtClean(cue.effTime)}</div>
 
       {/* Type segmented selector */}
       <div className="re-row">
@@ -550,6 +550,13 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
           placeholder="{name:opt1,opt2}  or  {name|Label:val=Display,...}"
           spellCheck={false}
         />
+      </div>
+
+      {/* Row operations — footer */}
+      <div className="re-ops">
+        <button className="ghost" onClick={() => onAddCue?.(i, false)}>+ ↑</button>
+        <button className="ghost re-del" onClick={() => onDeleteCue?.(i)}>✕ Delete</button>
+        <button className="ghost" onClick={() => onAddCue?.(i, true)}>+ ↓</button>
       </div>
     </div>
   );
