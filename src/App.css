@@ -341,7 +341,7 @@ main.solo .resize-handle-left { display: none; }
 .barwrap { height: 6px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.05); }
 .barwrap.hide { visibility: hidden; }
 .bar { height: 100%; transform-origin: center; background: var(--amber); border-radius: 4px; }
-.bar.castbar { transform-origin: left; background: var(--yellow); }
+.bar.castbar { transform-origin: center; background: var(--yellow); }
 
 .card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: 0; }
 .card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 0 auto; }

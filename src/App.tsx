@@ -937,7 +937,7 @@ export default function App() {
           if (c.type === 'cast') {
             // Castbar: fills left-to-right as cast progresses
             d.bar.className = 'bar castbar';
-            d.bar.style.transformOrigin = 'left';
+            d.bar.style.transformOrigin = 'center';
             d.bar.style.background = '';
             d.bar.style.transform = 'scaleX(' + Math.max(0, Math.min(1, 1 - t / warn)) + ')';
           } else {
