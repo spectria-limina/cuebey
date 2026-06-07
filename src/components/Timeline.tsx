@@ -133,20 +133,19 @@ export default function Timeline({
   }, []);
 
   if (focusRowRef) focusRowRef.current = (i: number) => {
-    setExpandedSet(() => {
-      const next = new Set<number>();
+    setExpandedSet(prev => {
+      const next = new Set(prev);
       next.add(i);
       return next;
     });
   };
 
-  function toggleRow(i: number, shift: boolean) {
+  function toggleRow(i: number, _shift: boolean) {
     setExpandedSet(prev => {
       const next = new Set(prev);
       if (next.has(i)) {
         next.delete(i);
       } else {
-        if (!shift) next.clear();
         next.add(i);
       }
       return next;
@@ -210,7 +209,7 @@ export default function Timeline({
         <div className="rlist-head">
           <div className="editor-clock" ref={editorClockDisplayRef}>0:00.0</div>
           {expandedSet.size > 0 && (
-            <span className="open-count">{expandedSet.size} open · Shift+click to add</span>
+            <span className="open-count">{expandedSet.size} open</span>
           )}
           <button className="ghost rlist-close-all" onClick={() => setExpandedSet(new Set())}>Close All</button>
         </div>
