@@ -13,7 +13,7 @@ import type {
 } from './types.ts';
 
 const REMAIN_DEFAULT = 0.5;
-// Seconds after last variable use retires before a note card enters pending/retired state
+// Seconds after last set-variable use retires before a card with c.sets enters pending state
 const VAR_LINGER = 5;
 
 export default function App() {
@@ -456,6 +456,9 @@ export default function App() {
       e.paused = true;
       e.frozenClock = 0;
     }
+
+    editorClockRef.current = 0;
+    if (editorClockDisplayRef.current) editorClockDisplayRef.current.textContent = fmtClock(0);
 
     lastRenderCur.current = -2;
     syncEngState();
