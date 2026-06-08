@@ -402,6 +402,11 @@ export default function App() {
     }
   }
 
+  function editorResume(): void {
+    if (eng.current.phaseHold) goRelease();
+    else togglePause();
+  }
+
   function editorResumeFromHere(): void {
     seekToTime(editorClockRef.current);
     if (eng.current.paused) togglePause();
@@ -1244,7 +1249,7 @@ export default function App() {
           editorClockDisplayRef={editorClockDisplayRef}
           engState={engState}
           onEditorSync={editorSyncToPlayback}
-          onEditorResume={togglePause}
+          onEditorResume={editorResume}
           onEditorResumeHere={editorResumeFromHere}
         />
         <div className="resize-handle resize-handle-left" onMouseDown={startResizeLeft} />

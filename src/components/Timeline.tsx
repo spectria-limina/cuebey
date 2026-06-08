@@ -260,11 +260,11 @@ export default function Timeline({
       <div className={'pane' + (activeTab === 'rendered' ? ' on' : '')}>
         <div className="rlist-head">
           <div className="editor-clock" ref={editorClockDisplayRef}>0:00.0</div>
-          {engState.started && engState.paused && (
+          {engState.started && (engState.paused || engState.phaseHold) && (
             <>
               <button className="ghost editor-clock-btn" title="Set editor clock to playback position" onClick={onEditorSync}>↩ Now</button>
-              <button className="ghost editor-clock-btn" title="Resume from current playback position" onClick={onEditorResume}>▶ Resume</button>
-              <button className="ghost editor-clock-btn" title="Seek to editor clock position and resume" onClick={onEditorResumeHere}>▶ Here</button>
+              <button className="ghost editor-clock-btn" title={engState.phaseHold ? 'GO — release phase hold' : 'Resume from current playback position'} onClick={onEditorResume}>▶ {engState.phaseHold ? 'GO' : 'Resume'}</button>
+              {engState.paused && <button className="ghost editor-clock-btn" title="Seek to editor clock position and resume" onClick={onEditorResumeHere}>▶ Here</button>}
             </>
           )}
           {expandedSet.size > 0 && (
