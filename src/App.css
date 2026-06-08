@@ -43,6 +43,7 @@ button.play { background: #11271c; border-color: #1f6b41; color: var(--green); }
 button.play.paused { background: #33260f; border-color: #7a5400; color: var(--orange); }
 button.nudge { font-family: var(--mono); padding: 7px 9px; }
 button.ghost { background: transparent; color: var(--ink-dim); }
+button.ghost:disabled { opacity: 0.3; cursor: default; }
 button.lock-btn { font-size: 12px; padding: 7px 11px; }
 button.lock-btn.locked { background: rgba(255,80,80,.12); border-color: rgba(255,80,80,.4); color: #ff7a7a; }
 button.help-btn { font-size: 14px; padding: 5px 10px; border-radius: 50%; min-width: 30px; }
@@ -222,10 +223,12 @@ main.solo .resize-handle-left { display: none; }
 .rrow-wrap.t-cast .rc { color: var(--ink-dim); font-size: 12.5px; }
 .rrow-wrap.t-sync .rc { color: var(--blue); font-style: italic; }
 
-/* Timing pills — hidden by default, shown on hover or when expanded */
-.rpills { display: flex; gap: 3px; flex: none; opacity: 0; transition: opacity .15s; }
-.rrow-wrap:hover .rpills, .rrow-wrap.expanded .rpills { opacity: 1; }
-.row-pills { display: flex; gap: 3px; flex: none; }
+/* Timing pills — in always-visible second row (.rrow-meta) */
+.rpills { display: flex; gap: 3px; flex: none; }
+.rrow-meta {
+  display: flex; gap: 4px; align-items: center; flex-wrap: wrap;
+  padding: 1px 12px 5px 90px;
+}
 .rpill {
   font-family: var(--mono); font-size: 9.5px; letter-spacing: .03em;
   border-radius: 3px; padding: 1px 4px; flex: none;
@@ -273,6 +276,9 @@ main.solo .resize-handle-left { display: none; }
 .re-now { color: var(--green) !important; border-color: rgba(51,178,119,.35) !important; }
 .re-x { color: var(--ink-faint) !important; padding: 4px 7px !important; }
 .re-ann { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); margin-left: 2px; }
+.re-abs { width: 80px; color: var(--ink-dim); }
+.re-nudge-row { gap: 4px; }
+.re-ops-sep { flex: 1; }
 
 /* Type selector — segmented buttons */
 .re-type-seg { display: flex; gap: 0; flex: none; }
