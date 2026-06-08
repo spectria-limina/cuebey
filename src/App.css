@@ -263,7 +263,7 @@ main.solo .resize-handle-left { display: none; }
 .re-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .re-ops { display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line-soft); margin-top: 2px; }
 .re-ops button { font-size: 11px; padding: 4px 10px; }
-.re-del { color: #ff7a72 !important; }
+.re-del { color: #a13f3a !important; }
 .re-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); min-width: 52px; flex: none; }
 .re-inp { font-family: var(--mono); font-size: 12.5px; background: #0f1520; color: var(--ink); border: 1px solid #2d3448; border-radius: 5px; padding: 4px 7px; width: 88px; }
 .re-txt { font-size: 13px; background: #0f1520; color: var(--ink); border: 1px solid #2d3448; border-radius: 5px; padding: 5px 8px; flex: 1; min-width: 120px; }
@@ -278,7 +278,6 @@ main.solo .resize-handle-left { display: none; }
 .re-ann { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); margin-left: 2px; }
 .re-abs { width: 80px; color: var(--ink-dim); }
 .re-nudge-row { gap: 4px; }
-.re-ops-sep { flex: 1; }
 
 /* Type selector — segmented buttons */
 .re-type-seg { display: flex; gap: 0; flex: none; }
@@ -324,7 +323,7 @@ main.solo .resize-handle-left { display: none; }
 .card {
   position: relative; border: 1px solid var(--line); border-radius: 12px;
   background: radial-gradient(120% 140% at 50% 0%, #14161d, #0d0f14);
-  padding: 10px 22px 12px; display: flex; flex-direction: column; gap: 5px;
+  padding: 6px 22px 12px; display: flex; flex-direction: column; gap: 1px;
   transition: .15s border-color, .15s background;
   overflow: hidden;
 }
@@ -354,7 +353,7 @@ main.solo .resize-handle-left { display: none; }
 .bar.castbar { transform-origin: center; background: var(--yellow); }
 
 .card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: 0; text-align: center; }
-.card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 0 auto; justify-content: center; }
+.card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 1 auto; min-width: 0; justify-content: center; }
 
 /* Skip button (was Done) */
 .skip-btn {
@@ -431,17 +430,17 @@ main.solo .resize-handle-left { display: none; }
 .settime-remain:hover { border-color: var(--orange) !important; }
 
 /* ── Card type base styles ── */
-.card.note { padding: 7px 22px 11px; border-left: 4px solid #343943; }
+.card.note { border-left: 4px solid #343943; }
 .card.note .card-text { color: var(--note); font-style: italic; font-size: clamp(18px, 2vw, 26px); }
 .card.note .card-state { visibility: hidden; }
 
-.card.event { opacity: 0.75; padding: 5px 22px 7px; border-radius: 10px; border-color: rgba(38,42,51,0.65); margin: 0 6px; }
+.card.event { opacity: 0.75; padding: 13px 16px 7px; border-radius: 10px; border-color: rgba(38,42,51,0.65); margin: 0 6px; }
 .card.event .card-text { font-size: clamp(13px, 1.4vw, 18px); color: var(--ink-dim); font-style: italic; }
-.card.event .card-state { font-size: 10px; }
+.card.event .card-state { display: none; }
 
-.card.cast { opacity: 0.78; padding: 5px 22px 7px; border-radius: 10px; border-color: rgba(38,42,51,0.65); margin: 0 6px; }
+.card.cast { opacity: 0.78; padding: 13px 16px 7px; border-radius: 10px; border-color: rgba(38,42,51,0.65); margin: 0 6px; }
 .card.cast .card-text { font-size: clamp(13px, 1.4vw, 18px); color: var(--ink-dim); }
-.card.cast .card-state { font-size: 10px; }
+.card.cast .card-state { display: none; }
 .card.cast .barwrap { background: rgba(190,190,82,0.15); }
 
 .card.phase .card-text { color: var(--blue); font-family: var(--cond); letter-spacing: .03em; }
@@ -454,6 +453,8 @@ main.solo .resize-handle-left { display: none; }
 .card.note.is-standby { border-color: rgba(86,168,232,.35); }
 .card.event.is-standby { border-color: rgba(86,168,232,.2); }
 .card.cast.is-standby { border-color: rgba(86,168,232,.2); }
+.card.cast.is-gray .barwrap,
+.card.cast.is-standby .barwrap { background: rgba(86,168,232,0.07); }
 
 /* Ready state — less prominent than NOW
    Calls: amber border + subtle amber bg + amber cd/state label
@@ -521,10 +522,9 @@ main.solo .resize-handle-left { display: none; }
 .card.ui-selected { border-color: var(--blue) !important; }
 .card.ui-hovered { border-color: rgba(86,168,232,.5); }
 
-/* Variable token display */
-.vval { color: #f5d060; font-weight: 700; }
+/* Variable token display — color fixed across all card states */
+.vval { color: var(--vgray); font-weight: 700; }
 .vunset { color: var(--vio); opacity: .85; font-style: italic; }
-.is-gray .vval { color: var(--vgray); }
 
 /* ── Right: variables panel ── */
 .vars { border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
