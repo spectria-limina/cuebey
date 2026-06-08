@@ -77,7 +77,6 @@ export default function App() {
   const cardRefs = useRef<(CardRef | null)[]>([]);
   const varRefs = useRef<(VarCardRef | null)[]>([]);
   const renderRowRefs = useRef<(RenderRowRef | null)[]>([]);
-  const lastRenderCur = useRef<number>(-2);
   const focusRowRef = useRef<((i: number) => void) | null>(null);
   const selectedIdxRef = useRef<number>(-1);
   const hoveredIdxRef = useRef<number>(-1);
@@ -130,7 +129,6 @@ export default function App() {
       : { ok: true, msg: newCues.length ? 'Parsed OK.' : 'Add rows, or Load a CSV.' }
     );
 
-    lastRenderCur.current = -2;
     lastTopActiveRef.current = -1;
     paintFrame(currentClock());
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -334,13 +332,13 @@ export default function App() {
   }
 
   function applyHoveredClass(i: number, add: boolean): void {
-    renderRowRefs.current[i]?.row?.classList.toggle('rrow-hovered', add);
+    renderRowRefs.current[i]?.row?.parentElement?.classList.toggle('rrow-hovered', add);
     const d = cardRefs.current[i];
     if (d) { d._hov = add; refreshCardClass(d); }
   }
 
   function applySelectedClass(i: number, add: boolean): void {
-    renderRowRefs.current[i]?.row?.classList.toggle('rrow-selected', add);
+    renderRowRefs.current[i]?.row?.parentElement?.classList.toggle('rrow-selected', add);
     const d = cardRefs.current[i];
     if (d) { d._sel = add; refreshCardClass(d); }
   }
@@ -468,7 +466,6 @@ export default function App() {
     editorClockRef.current = 0;
     if (editorClockDisplayRef.current) editorClockDisplayRef.current.textContent = fmtClock(0);
 
-    lastRenderCur.current = -2;
     syncEngState();
     setVars(prev => {
       const next = { ...prev };
@@ -583,7 +580,6 @@ export default function App() {
 
     cuesRef.current.forEach(c => (c.skipped = false));
     Object.values(varsRef.current).forEach(vv => { vv.value = null; });
-    lastRenderCur.current = -2;
 
     syncEngState();
     setVideoSynced(true);
@@ -1024,27 +1020,6 @@ export default function App() {
       if (vc.card && vc.card.className !== newCardCls) vc.card.className = newCardCls;
     }
 
-    // Track most recently fired cue (for cur highlight in timeline)
-    let cur = -1, curTime = -Infinity;
-    if (e.started) {
-      for (let i = 0; i < cues.length; i++) {
-        if (!cues[i].skipped && !cues[i].disabled && cues[i].effTime <= clock + 1e-6 && cues[i].effTime > curTime) {
-          cur = i; curTime = cues[i].effTime;
-        }
-      }
-    }
-    if (cur !== lastRenderCur.current) {
-      const prev = lastRenderCur.current;
-      if (prev >= 0 && renderRowRefs.current[prev]) {
-        const wrap = renderRowRefs.current[prev]?.row?.parentElement;
-        wrap?.classList.remove('rrow-cur');
-      }
-      if (cur >= 0 && renderRowRefs.current[cur]) {
-        const wrap = renderRowRefs.current[cur]?.row?.parentElement;
-        wrap?.classList.add('rrow-cur');
-      }
-      lastRenderCur.current = cur;
-    }
   }
 
   // ── Register callbacks ────────────────────────────────────────────────────
