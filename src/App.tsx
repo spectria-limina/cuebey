@@ -950,6 +950,15 @@ export default function App() {
         } else if (d.barwrap && !d.barwrap.classList.contains('hide')) {
           d.barwrap.classList.add('hide');
         }
+      } else if (c.type === 'cast' && st !== 'retired') {
+        // Keep castbar track visible (empty) in all pre-ready states
+        if (d.barwrap) d.barwrap.classList.remove('hide');
+        if (d.bar) {
+          d.bar.className = 'bar castbar';
+          d.bar.style.transformOrigin = 'left';
+          d.bar.style.transform = 'scaleX(0)';
+          d.bar.style.background = '';
+        }
       } else if (d.barwrap && !d.barwrap.classList.contains('hide')) {
         d.barwrap.classList.add('hide');
         if (d.bar) d.bar.style.background = '';

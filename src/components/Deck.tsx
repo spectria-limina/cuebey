@@ -164,7 +164,7 @@ function DeckCard({
                     </div>
                   ))}
                   {(isEvent || isCast) && (
-                    <button className="sync-btn" onClick={() => onSyncEntry(i)}>⊕ Sync</button>
+                    <button className="sync-btn" onClick={() => onSyncEntry(i)}>⏱ Sync</button>
                   )}
                   {!locked && (
                     <div className="settime-btns">

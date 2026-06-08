@@ -323,7 +323,7 @@ main.solo .resize-handle-left { display: none; }
   overflow: hidden;
 }
 .card-state { font-family: var(--cond); font-weight: 700; letter-spacing: .2em; text-transform: uppercase; font-size: 11.5px; color: var(--ink-faint); min-height: 14px; }
-.card-body { display: flex; align-items: baseline; gap: 16px; }
+.card-body { display: flex; align-items: center; gap: 16px; justify-content: center; }
 .cd {
   font-family: var(--mono); font-weight: 600; color: var(--ink-dim);
   font-variant-numeric: tabular-nums; line-height: 1;
@@ -333,24 +333,27 @@ main.solo .resize-handle-left { display: none; }
 .cd .cd-dec { font-size: 23px; opacity: .6; margin-left: 1px; min-width: 2ch; }
 .cd .cd-word { font-size: 30px; font-family: var(--cond); font-weight: 800; letter-spacing: .05em; }
 
-/* Note/event/cast cards get smaller countdown */
-.card.note .cd .cd-int, .card.event .cd .cd-int, .card.cast .cd .cd-int { font-size: 28px; }
-.card.note .cd .cd-dec, .card.event .cd .cd-dec, .card.cast .cd .cd-dec { font-size: 16px; }
-.card.note .cd .cd-word, .card.event .cd .cd-word, .card.cast .cd .cd-word { font-size: 18px; }
+/* Note cards get a medium countdown */
+.card.note .cd .cd-int { font-size: 28px; }
+.card.note .cd .cd-dec { font-size: 16px; }
+.card.note .cd .cd-word { font-size: 18px; }
+/* Event/cast cards get a smaller countdown */
+.card.event .cd .cd-int, .card.cast .cd .cd-int { font-size: 22px; }
+.card.event .cd .cd-dec, .card.cast .cd .cd-dec { font-size: 13px; }
+.card.event .cd .cd-word, .card.cast .cd .cd-word { font-size: 15px; }
 
 .barwrap { height: 6px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.05); }
 .barwrap.hide { visibility: hidden; }
 .bar { height: 100%; transform-origin: center; background: var(--amber); border-radius: 4px; }
 .bar.castbar { transform-origin: center; background: var(--yellow); }
 
-.card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: 0; }
-.card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 0 auto; }
+.card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: 0; text-align: center; }
+.card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 0 auto; justify-content: center; }
 
 /* Skip button (was Done) */
 .skip-btn {
   font-family: var(--cond); font-weight: 800; font-size: 13px; letter-spacing: .07em;
   padding: 9px 20px; background: var(--panel-2); border-color: #3a4150; color: var(--ink-faint);
-  margin-right: auto;
 }
 .skip-btn:hover { color: var(--ink); border-color: #52596a; }
 .skip-btn:disabled { opacity: .3; cursor: default; }
@@ -360,7 +363,6 @@ main.solo .resize-handle-left { display: none; }
 .restore-btn {
   font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: .06em;
   padding: 7px 14px; background: transparent; border-color: #3a4150; color: var(--ink-faint);
-  margin-right: auto;
 }
 .restore-btn:hover { color: var(--ink); }
 .restore-btn:disabled { opacity: .3; cursor: default; }
@@ -401,8 +403,11 @@ main.solo .resize-handle-left { display: none; }
 }
 
 /* Sync button on event/cast cards */
-.sync-btn { font-size: 11px; padding: 5px 10px; color: var(--blue) !important; border-color: rgba(86,168,232,.3) !important; }
-.sync-btn:hover { border-color: var(--blue) !important; }
+.sync-btn {
+  font-family: var(--cond); font-weight: 800; font-size: 13px; letter-spacing: .07em;
+  padding: 9px 20px; background: rgba(86,168,232,.07); border-color: rgba(86,168,232,.3); color: var(--blue);
+}
+.sync-btn:hover { border-color: var(--blue); }
 
 /* Set-time buttons on cards */
 .settime-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
@@ -424,13 +429,14 @@ main.solo .resize-handle-left { display: none; }
 .card.note .card-text { color: var(--note); font-style: italic; font-size: clamp(18px, 2vw, 26px); }
 .card.note .card-state { visibility: hidden; }
 
-.card.event { opacity: 0.82; }
-.card.event .card-text { font-size: clamp(17px, 1.9vw, 26px); color: var(--ink-dim); font-style: italic; }
+.card.event { opacity: 0.75; padding: 5px 22px 7px; border-radius: 10px; border-color: rgba(38,42,51,0.65); margin: 0 6px; }
+.card.event .card-text { font-size: clamp(13px, 1.4vw, 18px); color: var(--ink-dim); font-style: italic; }
 .card.event .card-state { font-size: 10px; }
 
-.card.cast { opacity: 0.85; }
-.card.cast .card-text { font-size: clamp(17px, 1.9vw, 26px); color: var(--ink-dim); }
+.card.cast { opacity: 0.78; padding: 5px 22px 7px; border-radius: 10px; border-color: rgba(38,42,51,0.65); margin: 0 6px; }
+.card.cast .card-text { font-size: clamp(13px, 1.4vw, 18px); color: var(--ink-dim); }
 .card.cast .card-state { font-size: 10px; }
+.card.cast .barwrap { background: rgba(190,190,82,0.15); }
 
 .card.phase .card-text { color: var(--blue); font-family: var(--cond); letter-spacing: .03em; }
 
@@ -543,6 +549,4 @@ main.solo .resize-handle-left { display: none; }
   .vars { border-left: 0; border-top: 1px solid var(--line); max-height: 30vh; }
   main.solo { grid-template-columns: 1fr !important; grid-template-rows: 1fr auto; }
   .resize-handle { display: none; }
-  .card-body { flex-direction: column; align-items: center; text-align: center; }
-  .card-btns { justify-content: center; }
 }
