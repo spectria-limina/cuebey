@@ -388,17 +388,17 @@ function RenderedRow({
         <div className="rrow-meta">
           {cue.standby != null && (
             <span className="rpill sb" title="Standby starts">
-              sb {fmtClean(Math.max(0, cue.effTime - cue.standby))}
+              {fmtClean(Math.max(0, cue.effTime - cue.standby))}
             </span>
           )}
           {cue.warn != null && (
             <span className="rpill rd" title="Ready starts">
-              rd {fmtClean(Math.max(0, cue.effTime - cue.warn))}
+              {fmtClean(Math.max(0, cue.effTime - cue.warn))}
             </span>
           )}
           {cue.remain != null && (
             <span className="rpill rm" title="NOW window ends">
-              ↳ {fmtClean(cue.effTime + cue.remain)}
+              {fmtClean(cue.effTime + cue.remain)}
             </span>
           )}
           {cue.sets.length > 0 && (
@@ -657,11 +657,10 @@ function RowEditor({ i, cue, offsetSec, getCurrentTime, onEditCue, onDeleteCue, 
 
       {/* Row operations — footer */}
       <div className="re-ops">
+        <button className="ghost" disabled={!onMoveUp} onClick={() => onMoveUp?.(i)}>↑ Up</button>
         <button className="ghost" onClick={() => onAddCue?.(i, false)}>⊕ Above</button>
         <button className="ghost re-del" onClick={() => onDeleteCue?.(i)}>✕ Delete</button>
         <button className="ghost" onClick={() => onAddCue?.(i, true)}>⊕ Below</button>
-        <span className="re-ops-sep" />
-        <button className="ghost" disabled={!onMoveUp} onClick={() => onMoveUp?.(i)}>↑ Up</button>
         <button className="ghost" disabled={!onMoveDown} onClick={() => onMoveDown?.(i)}>↓ Down</button>
       </div>
     </div>
