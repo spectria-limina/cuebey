@@ -782,8 +782,8 @@ export default function App() {
     }
 
     if (t <= -remain) {
-      // Past the now window — check if any referenced variable is still unset
-      const varNames = c.varRefs || [];
+      // Past the now window — only cards that SET variables can go pending
+      const varNames = c.sets.map(s => s.name);
       if (varNames.length > 0) {
         const anyUnset = varNames.some(nm => varsRef.current[nm]?.value == null);
         if (anyUnset) {
