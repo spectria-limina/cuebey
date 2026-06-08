@@ -13,6 +13,7 @@ interface DeckProps {
   onSyncEntry: (i: number) => void;
   onPhaseBtn: () => void;
   onCardFocus: (i: number) => void;
+  onPencilClick: (i: number) => void;
   onDoubleClick: (i: number) => void;
   onHover: (i: number) => void;
   onUnhover: (i: number) => void;
@@ -27,7 +28,7 @@ interface DeckProps {
 
 export default function Deck({
   cues, vars, engState, doneDisabled,
-  onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus, onDoubleClick,
+  onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus, onPencilClick, onDoubleClick,
   onHover, onUnhover, onToggleDisabled,
   registerCard, unregisterCard, locked,
   onEditCue, getCurrentTime, offsetSec,
@@ -47,6 +48,7 @@ export default function Deck({
           onSyncEntry={onSyncEntry}
           onPhaseBtn={onPhaseBtn}
           onCardFocus={onCardFocus}
+          onPencilClick={onPencilClick}
           onDoubleClick={onDoubleClick}
           onHover={onHover}
           onUnhover={onUnhover}
@@ -74,6 +76,7 @@ interface DeckCardProps {
   onSyncEntry: (i: number) => void;
   onPhaseBtn: () => void;
   onCardFocus: (i: number) => void;
+  onPencilClick: (i: number) => void;
   onDoubleClick: (i: number) => void;
   onHover: (i: number) => void;
   onUnhover: (i: number) => void;
@@ -88,7 +91,7 @@ interface DeckCardProps {
 
 function DeckCard({
   i, cue, vars, engState, doneDisabled,
-  onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus, onDoubleClick,
+  onDone, onSetVar, onSyncEntry, onPhaseBtn, onCardFocus, onPencilClick, onDoubleClick,
   onHover, onUnhover, onToggleDisabled,
   registerCard, unregisterCard, locked,
   onEditCue, getCurrentTime, offsetSec,
@@ -210,7 +213,7 @@ function DeckCard({
           <button
             className="card-pencil"
             title="Edit in timeline"
-            onClick={e => { e.stopPropagation(); onCardFocus(i); }}
+            onClick={e => { e.stopPropagation(); onPencilClick(i); }}
           >
             ✎
           </button>

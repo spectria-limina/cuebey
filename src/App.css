@@ -352,7 +352,7 @@ main.solo .resize-handle-left { display: none; }
 .bar { height: 100%; transform-origin: center; background: var(--amber); border-radius: 4px; }
 .bar.castbar { transform-origin: center; background: var(--yellow); }
 
-.card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: 0; text-align: center; }
+.card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1 0.5 auto; min-width: 0; text-align: center; }
 .card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 1 auto; min-width: 0; justify-content: center; }
 
 /* Skip button (was Done) */
@@ -377,9 +377,9 @@ main.solo .resize-handle-left { display: none; }
   position: absolute; top: 8px; right: 10px;
   font-size: 13px; padding: 2px 6px; background: transparent; border-color: transparent;
   color: var(--ink-faint); opacity: 0; transition: opacity .12s;
-  z-index: 2;
+  z-index: 2; pointer-events: none;
 }
-.card:hover .card-pencil { opacity: 0.55; }
+.card:hover .card-pencil { opacity: 0.55; pointer-events: auto; }
 .card-pencil:hover { opacity: 1 !important; color: var(--ink); border-color: var(--line) !important; }
 
 /* Disabled card badge */

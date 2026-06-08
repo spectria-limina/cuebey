@@ -1097,6 +1097,17 @@ export default function App() {
     }));
   }
 
+  function onPencilClick(i: number): void {
+    const e = eng.current;
+    if (e.started && !e.paused && !e.phaseHold) return;
+    setActiveTab('rendered');
+    handleSelect(i);
+    focusRowRef.current?.(i);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      renderRowRefs.current[i]?.row?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }));
+  }
+
   function loadFile(file: File): void {
     const r = new FileReader();
     r.onload = () => {
@@ -1228,6 +1239,7 @@ export default function App() {
             onSyncEntry={onSyncEntry}
             onPhaseBtn={() => { if (engState.phaseHold) goRelease(); else if (!engState.started) start(); }}
             onCardFocus={onCardFocus}
+            onPencilClick={onPencilClick}
             onDoubleClick={handleDoubleClick}
             onHover={handleHover}
             onUnhover={handleUnhover}
