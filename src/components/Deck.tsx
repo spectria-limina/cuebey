@@ -146,70 +146,70 @@ function DeckCard({
               dangerouslySetInnerHTML={{ __html: renderText(cue.text, vars) }}
             />
             <div className="card-btns" onClick={e => e.stopPropagation()}>
-              {isPhase ? (
-                <button className="go-btn" ref={gbRef} onClick={onPhaseBtn}>
-                  {engState.started ? 'GO ▸' : '▶ Start'}
-                </button>
-              ) : (
-                <>
-                  {cue.sets.map(s => (
-                    <div key={s.name} className="vgroup">
-                      <span className="vglabel">{s.displayLabel || s.name}</span>
-                      {s.options.map((opt, ki) => (
-                        <button
-                          key={opt}
-                          className={vars[s.name]?.value === opt ? 'on' : ''}
-                          onClick={() => onSetVar(s.name, opt)}
-                        >
-                          {s.labels?.[ki] ?? opt}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                  {(isEvent || isCast) && (
-                    <button className="sync-btn" onClick={() => onSyncEntry(i)}>⏱ Sync</button>
-                  )}
-                  <div className="done-settime-group">
-                    {!locked && (
-                      <div className="settime-btns">
-                        <button className="settime-btn settime-now" title="Set cue time to now" onClick={() => {
-                          const t = getCurrentTime();
-                          onEditCue(i, { rawTime: fmtHMS(Math.max(0, t + offsetSec)) });
-                        }}>↓ Now</button>
-                        <button className="settime-btn settime-ready" title="Set ready window to start now" onClick={() => {
-                          const t = getCurrentTime();
-                          onEditCue(i, { warn: Math.max(0, cue.effTime - t) });
-                        }}>↓ Ready</button>
-                        <button className="settime-btn settime-standby" title="Set standby to start now" onClick={() => {
-                          const t = getCurrentTime();
-                          onEditCue(i, { standby: Math.max(0, cue.effTime - t) });
-                        }}>↓ Standby</button>
-                        <button className="settime-btn settime-remain" title="Set remain to elapsed since cue" onClick={() => {
-                          const t = getCurrentTime();
-                          onEditCue(i, { remain: Math.max(0, t - cue.effTime) });
-                        }}>↓ Remain</button>
-                      </div>
-                    )}
-                    {cue.disabled ? (
+            {isPhase ? (
+              <button className="go-btn" ref={gbRef} onClick={onPhaseBtn}>
+                {engState.started ? 'GO ▸' : '▶ Start'}
+              </button>
+            ) : (
+              <>
+                {cue.sets.map(s => (
+                  <div key={s.name} className="vgroup">
+                    <span className="vglabel">{s.displayLabel || s.name}</span>
+                    {s.options.map((opt, ki) => (
                       <button
-                        className="restore-btn"
-                        onClick={() => onToggleDisabled?.(i)}
+                        key={opt}
+                        className={vars[s.name]?.value === opt ? 'on' : ''}
+                        onClick={() => onSetVar(s.name, opt)}
                       >
-                        ↺ Enable
+                        {s.labels?.[ki] ?? opt}
                       </button>
-                    ) : (
-                      <button
-                        ref={doneBtnRef}
-                        className="skip-btn"
-                        onClick={() => onDone(i)}
-                        disabled={doneDisabled}
-                      >
-                        ⇓
-                      </button>
-                    )}
+                    ))}
                   </div>
-                </>
-              )}
+                ))}
+                {(isEvent || isCast) && (
+                  <button className="sync-btn" onClick={() => onSyncEntry(i)}>⏱ Sync</button>
+                )}
+                <div className="done-settime-group">
+                  {!locked && (
+                    <div className="settime-btns">
+                      <button className="settime-btn settime-now" title="Set cue time to now" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { rawTime: fmtHMS(Math.max(0, t + offsetSec)) });
+                      }}>↓ Now</button>
+                      <button className="settime-btn settime-ready" title="Set ready window to start now" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { warn: Math.max(0, cue.effTime - t) });
+                      }}>↓ Ready</button>
+                      <button className="settime-btn settime-standby" title="Set standby to start now" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { standby: Math.max(0, cue.effTime - t) });
+                      }}>↓ Standby</button>
+                      <button className="settime-btn settime-remain" title="Set remain to elapsed since cue" onClick={() => {
+                        const t = getCurrentTime();
+                        onEditCue(i, { remain: Math.max(0, t - cue.effTime) });
+                      }}>↓ Remain</button>
+                    </div>
+                  )}
+                  {cue.disabled ? (
+                    <button
+                      className="restore-btn"
+                      onClick={() => onToggleDisabled?.(i)}
+                    >
+                      ↺ Enable
+                    </button>
+                  ) : (
+                    <button
+                      ref={doneBtnRef}
+                      className="skip-btn"
+                      onClick={() => onDone(i)}
+                      disabled={doneDisabled}
+                    >
+                      ⇓
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
             </div>
           </div>
           <button

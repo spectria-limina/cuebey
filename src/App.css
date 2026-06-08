@@ -327,7 +327,7 @@ main.solo .resize-handle-left { display: none; }
 	overflow: hidden;
 }
 .card-state { font-family: var(--cond); font-weight: 700; letter-spacing: .2em; text-transform: uppercase; font-size: 11.5px; color: var(--ink-faint); min-height: 14px; }
-.card-body { display: flex; align-items: center; gap: 16px; justify-content: center; }
+.card-body { display: flex; align-items: center; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .cd {
 	font-family: var(--mono); font-weight: 600; color: var(--ink-dim);
 	font-variant-numeric: tabular-nums; line-height: 1;
@@ -350,8 +350,8 @@ main.solo .resize-handle-left { display: none; }
 .bar { height: 100%; transform-origin: center; background: var(--amber); border-radius: 4px; }
 .bar.castbar { transform-origin: center; background: var(--yellow); }
 
-.card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: 0; }
-.card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; flex: 0 1 auto; min-width: 0; justify-content: center; }
+.card-text { font-family: var(--noto); font-weight: 700; font-size: clamp(21px, 2.4vw, 32px); line-height: 1.12; word-break: break-word; flex: 1; min-width: max(60%,content); }
+.card-btns { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; justify-content: flex-end; margin-left: auto; flex: 0 1 auto; min-width: 0; }
 
 /* Skip button (was Done) */
 .skip-btn {
