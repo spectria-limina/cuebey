@@ -77,6 +77,17 @@ export default function Header({
     onClockBlur();
   }
 
+  function handleNow() {
+    onClockBlur();
+  }
+
+  function handleHere() {
+    const t = parseTime(clockRef.current?.value ?? '');
+    if (t !== null) onClockSeek(t);
+    if (phaseHold) onGo();
+    else onPlay();
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) onLoadVideo(file);
@@ -96,6 +107,7 @@ export default function Header({
         <button className="nudge ghost" onClick={() => onNudge(-1)}>−1s</button>
         <button className="nudge ghost" onClick={() => onNudge(-0.1)}>−0.1s</button>
         <button className={playClass} onClick={phaseHold ? onGo : onPlay}>{playLabel}</button>
+        <button className="ghost" onClick={onReset}>⟲ Reset</button>
         <button className="nudge ghost" onClick={() => onNudge(0.1)}>+0.1s</button>
         <button className="nudge ghost" onClick={() => onNudge(1)}>+1s</button>
         <button className="nudge ghost" onClick={() => onNudge(5)}>+5s</button>
@@ -108,7 +120,12 @@ export default function Header({
           spellCheck={false}
           autoComplete="off"
         />
-        <button className="ghost" onClick={onReset}>⟲ Reset</button>
+        {started && (paused || phaseHold) && (
+          <button className="ghost nudge" title="Reset clock to playback position" onClick={handleNow}>↩ Now</button>
+        )}
+        {started && paused && (
+          <button className="ghost nudge" title="Seek to this time and resume" onClick={handleHere}>▶ Here</button>
+        )}
 
         <span className="transport-sep" />
 

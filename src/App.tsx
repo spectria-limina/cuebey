@@ -394,23 +394,6 @@ export default function App() {
     }
   }
 
-  function editorSyncToPlayback(): void {
-    const e = eng.current;
-    editorClockRef.current = e.frozenClock;
-    if (editorClockDisplayRef.current) {
-      editorClockDisplayRef.current.textContent = fmtClock(e.frozenClock);
-    }
-  }
-
-  function editorResume(): void {
-    if (eng.current.phaseHold) goRelease();
-    else togglePause();
-  }
-
-  function editorResumeFromHere(): void {
-    seekToTime(editorClockRef.current);
-    if (eng.current.paused) togglePause();
-  }
 
   function editCue(i: number, changes: CueChanges): void {
     const c = cuesRef.current[i];
@@ -1245,10 +1228,6 @@ export default function App() {
           focusRowRef={focusRowRef}
           locked={locked}
           editorClockDisplayRef={editorClockDisplayRef}
-          engState={engState}
-          onEditorSync={editorSyncToPlayback}
-          onEditorResume={editorResume}
-          onEditorResumeHere={editorResumeFromHere}
         />
         <div className="resize-handle resize-handle-left" onMouseDown={startResizeLeft} />
         <div className="center-col">
