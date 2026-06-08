@@ -13,7 +13,7 @@ const HELP_ROWS: [string, string][] = [
   ['1 – 9',   'Set the Nth variable option on the current active card'],
 ];
 
-const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4];
 
 interface HeaderProps {
   engState: EngStateSnapshot;
@@ -124,7 +124,6 @@ export default function Header({
           className="speed-select"
           defaultValue={1}
           onChange={e => onSpeedChange(Number(e.target.value))}
-          disabled={!videoLoaded}
           title="Playback speed"
         >
           {SPEED_OPTIONS.map(s => (
