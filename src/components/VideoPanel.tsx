@@ -65,17 +65,21 @@ export default function VideoPanel({
                 <button className="ghost" onClick={onClearSync}>✕ Clear Sync</button>
               </>
             )}
-            <div className="video-sep" />
-            <span className="video-speed-label">Speed</span>
-            {SPEEDS.map(r => (
-              <button
-                key={r}
-                className="nudge ghost video-speed-btn"
-                onClick={() => onRateChange(r)}
-              >
-                {r}×
-              </button>
-            ))}
+            {!synced && (
+              <>
+                <div className="video-sep" />
+                <span className="video-speed-label">Speed</span>
+                {SPEEDS.map(r => (
+                  <button
+                    key={r}
+                    className="nudge ghost video-speed-btn"
+                    onClick={() => onRateChange(r)}
+                  >
+                    {r}×
+                  </button>
+                ))}
+              </>
+            )}
             <div className="video-sep" />
             <span className="video-speed-label">Frame</span>
             <button className="nudge ghost video-speed-btn" onClick={() => onFrameStep(-1)}>−1f</button>

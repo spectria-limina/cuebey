@@ -9,7 +9,7 @@ const HELP_ROWS: [string, string][] = [
   ['R',       'Reset to beginning'],
   ['E',       'Toggle timeline editor'],
   ['L',       'Toggle lock mode'],
-  ['← / →',  'Nudge clock ±0.5 s'],
+  ['← / →',  'Nudge clock ±0.5s'],
   ['1 – 9',   'Set the Nth variable option on the current active card'],
 ];
 
@@ -24,8 +24,7 @@ interface HeaderProps {
   clockRef: RefObject<HTMLInputElement | null>;
   onPlay: () => void;
   onGo: () => void;
-  onMinus: () => void;
-  onPlus: () => void;
+  onNudge: (d: number) => void;
   onReset: () => void;
   onToggleTimeline: () => void;
   hideDone: boolean;
@@ -43,7 +42,7 @@ interface HeaderProps {
 
 export default function Header({
   engState, videoLoaded, videoSynced, offsetText, onOffsetChange, clockRef,
-  onPlay, onGo, onMinus, onPlus, onReset, onToggleTimeline,
+  onPlay, onGo, onNudge, onReset, onToggleTimeline,
   hideDone, onToggleHideDone,
   locked, onToggleLock,
   showHelp, onToggleHelp,
@@ -93,9 +92,13 @@ export default function Header({
       </div>
 
       <div className="transport">
-        <button className="nudge ghost" onClick={onMinus}>−0.5s</button>
+        <button className="nudge ghost" onClick={() => onNudge(-5)}>−5s</button>
+        <button className="nudge ghost" onClick={() => onNudge(-1)}>−1s</button>
+        <button className="nudge ghost" onClick={() => onNudge(-0.1)}>−0.1s</button>
         <button className={playClass} onClick={phaseHold ? onGo : onPlay}>{playLabel}</button>
-        <button className="nudge ghost" onClick={onPlus}>+0.5s</button>
+        <button className="nudge ghost" onClick={() => onNudge(0.1)}>+0.1s</button>
+        <button className="nudge ghost" onClick={() => onNudge(1)}>+1s</button>
+        <button className="nudge ghost" onClick={() => onNudge(5)}>+5s</button>
         <input
           className="clock-input"
           ref={clockRef}

@@ -245,9 +245,15 @@ export default function App() {
       v.currentTime = Math.max(0, v.currentTime + d);
       return;
     }
-    if (!e.started) return;
-    if (e.paused || e.phaseHold) e.frozenClock += d;
-    else e.syncTime += d;
+    if (!e.started) {
+      setEditorClock(Math.max(0, editorClockRef.current + d));
+      if (v) v.currentTime = Math.max(0, v.currentTime + d);
+      return;
+    }
+    if (e.paused || e.phaseHold) {
+      e.frozenClock = Math.max(0, e.frozenClock + d);
+      if (v) v.currentTime = Math.max(0, v.currentTime + d);
+    } else e.syncTime += d;
     e.prevClock = currentClock();
   }
 
@@ -342,8 +348,9 @@ export default function App() {
   function handleSelect(i: number): void {
     const prev = selectedIdxRef.current;
     if (prev >= 0) applySelectedClass(prev, false);
-    selectedIdxRef.current = i;
-    if (i >= 0) applySelectedClass(i, true);
+    const next = prev === i ? -1 : i;
+    selectedIdxRef.current = next;
+    if (next >= 0) applySelectedClass(next, true);
     // Does NOT seek the clock; double-click calls handleSeek for that
   }
 
@@ -385,6 +392,19 @@ export default function App() {
       // Not started: set editor clock to this cue's time
       setEditorClock(c.effTime);
     }
+  }
+
+  function editorSyncToPlayback(): void {
+    const e = eng.current;
+    editorClockRef.current = e.frozenClock;
+    if (editorClockDisplayRef.current) {
+      editorClockDisplayRef.current.textContent = fmtClock(e.frozenClock);
+    }
+  }
+
+  function editorResumeFromHere(): void {
+    seekToTime(editorClockRef.current);
+    if (eng.current.paused) togglePause();
   }
 
   function editCue(i: number, changes: CueChanges): void {
@@ -498,6 +518,7 @@ export default function App() {
       e.frozenClock = t;
       e.prevClock = t;
       paintFrame(t);
+      if (v) v.currentTime = t;
     }
   }
 
@@ -510,10 +531,12 @@ export default function App() {
       if (vt != null) v.currentTime = Math.max(0, vt);
     } else if (!e.started) {
       setEditorClock(t);
+      if (v) v.currentTime = t;
     } else if (e.paused || e.phaseHold) {
       e.frozenClock = t;
       e.prevClock = t;
       paintFrame(t);
+      if (v) v.currentTime = t;
     } else {
       // Running freestanding: re-anchor
       e.syncTime = t;
@@ -566,7 +589,9 @@ export default function App() {
     e.phaseHold = false; e.phaseHoldIdx = -1;
     e.frozenClock = 0;
     e.paused = v.paused;
-    e.prevClock = -1e9;
+    const sc = cuesRef.current;
+    const fp = sc.reduce<Cue | null>((m, x) => x.type === 'phase' && (m === null || x.effTime < m.effTime) ? x : m, null);
+    e.prevClock = (fp && fp.effTime <= 0) ? fp.effTime : -1e9;
 
     cuesRef.current.forEach(c => (c.skipped = false));
     Object.values(varsRef.current).forEach(vv => { vv.value = null; });
@@ -862,7 +887,9 @@ export default function App() {
 
       // Slot visibility
       const isDisabled = c.disabled;
-      const gone = hideDoneRef.current && st === 'retired' && !isDisabled;
+      // When not started, stateOf returns 'gray' for all cards, so check time directly
+      const timeRetired = !e.started && !c.skipped && c.type !== 'phase' && clock > c.effTime + (c.remain ?? REMAIN_DEFAULT);
+      const gone = hideDoneRef.current && (st === 'retired' || timeRetired) && !isDisabled;
       let slotCls = 'slot';
       if (isDisabled) slotCls += ' slot-disabled';
       else if (gone) slotCls += ' gone';
@@ -1167,8 +1194,7 @@ export default function App() {
         clockRef={clockDisplayRef}
         onPlay={togglePause}
         onGo={goRelease}
-        onMinus={() => nudge(-0.5)}
-        onPlus={() => nudge(0.5)}
+        onNudge={nudge}
         onReset={reset}
         onToggleTimeline={() => setShowTimeline(v => !v)}
         hideDone={hideDone}
@@ -1216,6 +1242,10 @@ export default function App() {
           focusRowRef={focusRowRef}
           locked={locked}
           editorClockDisplayRef={editorClockDisplayRef}
+          engState={engState}
+          onEditorSync={editorSyncToPlayback}
+          onEditorResume={togglePause}
+          onEditorResumeHere={editorResumeFromHere}
         />
         <div className="resize-handle resize-handle-left" onMouseDown={startResizeLeft} />
         <div className="center-col">

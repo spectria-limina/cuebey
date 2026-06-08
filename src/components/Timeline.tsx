@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { fmtClean, fmtHMS, parseTime } from '../format.ts';
 import { renderText, parseSetsFromRaw } from '../parser.ts';
-import type { Cue, VarsRecord, ParseStatus, CueChanges, RenderRowRef } from '../types.ts';
+import type { Cue, VarsRecord, ParseStatus, CueChanges, RenderRowRef, EngStateSnapshot } from '../types.ts';
 
 const COL_HEADERS = ['time', 'type', 'text', 'standby', 'ready', 'remain', 'vars', 'flags'];
 
@@ -51,6 +51,10 @@ interface TimelineProps {
   focusRowRef: React.RefObject<((i: number) => void) | null>;
   locked: boolean;
   editorClockDisplayRef: React.RefObject<HTMLDivElement | null>;
+  engState: EngStateSnapshot;
+  onEditorSync: () => void;
+  onEditorResume: () => void;
+  onEditorResumeHere: () => void;
 }
 
 export default function Timeline({
@@ -63,6 +67,8 @@ export default function Timeline({
   registerRenderRow, focusRowRef,
   locked,
   editorClockDisplayRef,
+  engState,
+  onEditorSync, onEditorResume, onEditorResumeHere,
 }: TimelineProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const rlistRef = useRef<HTMLDivElement>(null);
@@ -254,6 +260,13 @@ export default function Timeline({
       <div className={'pane' + (activeTab === 'rendered' ? ' on' : '')}>
         <div className="rlist-head">
           <div className="editor-clock" ref={editorClockDisplayRef}>0:00.0</div>
+          {engState.started && engState.paused && (
+            <>
+              <button className="ghost editor-clock-btn" title="Set editor clock to playback position" onClick={onEditorSync}>↩ Now</button>
+              <button className="ghost editor-clock-btn" title="Resume from current playback position" onClick={onEditorResume}>▶ Resume</button>
+              <button className="ghost editor-clock-btn" title="Seek to editor clock position and resume" onClick={onEditorResumeHere}>▶ Here</button>
+            </>
+          )}
           {expandedSet.size > 0 && (
             <span className="open-count">{expandedSet.size} open</span>
           )}
