@@ -800,7 +800,7 @@ export default function App() {
     }
 
     if (c.skipped) return 'retired';
-    if (!e.started) return 'gray';
+    if (!e.started && clock <= 0) return 'gray';
 
     const t = c.effTime - clock;
     const warn = c.warn ?? WARN_DEFAULT;
@@ -892,9 +892,7 @@ export default function App() {
 
       // Slot visibility
       const isDisabled = c.disabled;
-      // When not started, stateOf returns 'gray' for all cards, so check time directly
-      const timeRetired = !e.started && !c.skipped && c.type !== 'phase' && clock > c.effTime + (c.remain ?? REMAIN_DEFAULT);
-      const gone = hideDoneRef.current && (st === 'retired' || timeRetired) && !isDisabled;
+      const gone = hideDoneRef.current && st === 'retired' && !isDisabled;
       let slotCls = 'slot';
       if (isDisabled) slotCls += ' slot-disabled';
       else if (gone) slotCls += ' gone';
